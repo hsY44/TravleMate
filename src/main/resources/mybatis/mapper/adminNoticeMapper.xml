@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    adminNoticeMapper.xml
+    - 관리자 공지사항 관련 SQL
+    - namespace : com.doit.app.mapper.AdminNoticeMapper
+-->
+<mapper namespace="com.doit.app.mapper.AdminNoticeMapper">
+
+    <!-- resultMap : NoticeVo -->
+    <resultMap id="noticeVoMap" type="com.doit.app.domain.NoticeVo">
+        <id     column="NOTICE_NO"      property="noticeNo"/>
+        <result column="ADMIN_NO"       property="adminNo"/>
+        <result column="NOTICE_TITLE"   property="noticeTitle"/>
+        <result column="NOTICE_CONTENT" property="noticeContent"/>
+        <result column="VIEW_CNT"       property="viewCnt"/>
+        <result column="CREATE_DT"      property="createDt"/>
+    </resultMap>
+
+
+    <!--
+        countAdminNotices
+        - 공지사항 전체 수
+    -->
+    <select id="countAdminNotices" resultType="int">
+        SELECT COUNT(*) FROM NOTICE
+    </select>
+
+
+    <!--
+        selectAdminNotices
+        - 공지사항 목록 — 페이징, 등록일 역순
+    -->
+    <select id="selectAdminNotices" resultMap="noticeVoMap">
+        SELECT *
+          FROM (
+               SELECT ROWNUM AS RN
+                    , T.*
+                 FROM (
+                      SELECT NOTICE_NO
+                           , ADMIN_NO
+                           , NOTICE_TITLE
+                           , VIEW_CNT
+                           , TO_CHAR(CREATE_DT, 'YYYY-MM-DD') AS CREATE_DT
+                        FROM NOTICE
+                       ORDER BY CREATE_DT DESC
+                      ) T
+                WHERE ROWNUM &lt;= #{endRow}
+               )
+         WHERE RN >= #{startRow}
+    </select>
+
+
+    <!--
+        selectAdminNoticeByNo
+        - 공지사항 단건 조회 (수정용 — 내용 포함)
+    -->
+    <select id="selectAdminNoticeByNo" resultMap="noticeVoMap">
+        SELECT NOTICE_NO
+             , ADMIN_NO
+             , NOTICE_TITLE
+             , NOTICE_CONTENT
+             , VIEW_CNT
+             , TO_CHAR(CREATE_DT, 'YYYY-MM-DD') AS CREATE_DT
+          FROM NOTICE
+         WHERE NOTICE_NO = #{noticeNo}
+    </select>
+
+
+    <!--
+        insertNotice
+        - 공지사항 등록 (NOTICE_SEQ 사용)
+    -->
+    <insert id="insertNotice">
+        INSERT INTO NOTICE (NOTICE_NO, ADMIN_NO, NOTICE_TITLE, NOTICE_CONTENT)
+        VALUES (NOTICE_SEQ.NEXTVAL, #{adminNo}, #{noticeTitle}, #{noticeContent})
+    </insert>
+
+
+    <!--
+        updateNotice
+        - 공지사항 제목·내용 수정
+    -->
+    <update id="updateNotice">
+        UPDATE NOTICE
+           SET NOTICE_TITLE   = #{noticeTitle}
+             , NOTICE_CONTENT = #{noticeContent}
+         WHERE NOTICE_NO = #{noticeNo}
+    </update>
+
+
+    <!--
+        deleteNotice
+        - 공지사항 삭제
+    -->
+    <delete id="deleteNotice">
+        DELETE FROM NOTICE WHERE NOTICE_NO = #{noticeNo}
+    </delete>
+
+</mapper>

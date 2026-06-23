@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    qnaMapper.xml
+    - 문의 관련 SQL
+    - namespace : com.doit.app.mapper.QnaMapper
+
+    ※ 시퀀스 이름 : QNA_QUESTION_SEQ (DB 시퀸스 생성.sql 기준)
+    ※ 처리상태 코드 : ST001(접수/대기), ST002(답변완료)
+-->
+<mapper namespace="com.doit.app.mapper.QnaMapper">
+
+    <!--
+        selectQnaTypes
+        - 문의 카테고리 전체 조회 (카테고리명 오름차순)
+        - 마이페이지 모달·문의 폼 페이지 select box 에서 사용
+    -->
+    <select id="selectQnaTypes" resultType="com.doit.app.domain.QnaTypeVo">
+        SELECT QNA_TYPE_CD AS qnaTypeCd
+             , QNA_TYPE_NM AS qnaTypeNm
+          FROM QNA_TYPE
+         ORDER BY QNA_TYPE_NM
+    </select>
+
+
+    <!--
+        공통 SELECT 컬럼 블록
+        - QNA_QUESTION + QNA_TYPE JOIN + QNA_ANSWER LEFT JOIN
+        - 여러 SELECT 에서 재사용
+    -->
+    <sql id="qnaSelectColumns">
+        SELECT QQ.QNA_REQ_NO                              AS qnaReqNo
+             , QQ.MEMBER_NO                               AS memberNo
+             , QQ.QNA_TYPE_CD                             AS qnaTypeCd
+             , QT.QNA_TYPE_NM                             AS qnaTypeNm
+             , QQ.QNA_TITLE                               AS qnaTitle
+             , QQ.QNA_CONTENT                             AS qnaContent
+             , QQ.STATUS_CD                               AS statusCd
+             , TO_CHAR(QQ.CREATE_DT, 'YYYY-MM-DD HH24:MI') AS createDt
+             , QA.ANS_CONTENT                             AS ansContent
+          FROM QNA_QUESTION QQ
+          JOIN QNA_TYPE QT     ON QT.QNA_TYPE_CD = QQ.QNA_TYPE_CD
+          LEFT JOIN QNA_ANSWER QA ON QA.QNA_REQ_NO = QQ.QNA_REQ_NO
+    </sql>
+
+
+    <!--
+        countQnasByMemberNo
+        - 회원별 문의 전체 건수 (페이징 계산용)
+    -->
+    <select id="countQnasByMemberNo" resultType="int">
+        SELECT COUNT(1)
+          FROM QNA_QUESTION
+         WHERE MEMBER_NO = #{memberNo}
+    </select>
+
+
+    <!--
+        selectQnasByMemberNo
+        - 회원별 문의 목록 조회 — 페이징 (독립 목록 페이지)
+        - Oracle ROWNUM 두 겹 서브쿼리로 startRow ~ endRow 범위 추출
+    -->
+    <select id="selectQnasByMemberNo" resultType="com.doit.app.domain.QnaVo">
+        SELECT *
+          FROM (
+            SELECT A.*, ROWNUM AS rn
+              FROM (
+                <include refid="qnaSelectColumns"/>
+                 WHERE QQ.MEMBER_NO = #{memberNo}
+                 ORDER BY QQ.CREATE_DT DESC
+              ) A
+             WHERE ROWNUM &lt;= #{endRow}
+          )
+         WHERE rn &gt;= #{startRow}
+    </select>
+
+
+    <!--
+        selectRecentQnasByMemberNo
+        - 마이페이지 탭용 최근 5건
+        - ORDER BY 적용 후 ROWNUM 제한 (서브쿼리 필수)
+    -->
+    <select id="selectRecentQnasByMemberNo" resultType="com.doit.app.domain.QnaVo">
+        SELECT *
+          FROM (
+            <include refid="qnaSelectColumns"/>
+             WHERE QQ.MEMBER_NO = #{memberNo}
+             ORDER BY QQ.CREATE_DT DESC
+          )
+         WHERE ROWNUM &lt;= 5
+    </select>
+    
+    <!--
+        selectQnaDetail
+        - 문의 단건 조회 (상세 페이지)
+        - memberNo 검증으로 본인 문의만 조회 가능
+    -->
+    <select id="selectQnaDetail" resultType="com.doit.app.domain.QnaVo">
+        <include refid="qnaSelectColumns"/>
+         WHERE QQ.QNA_REQ_NO = #{qnaReqNo}
+           AND QQ.MEMBER_NO  = #{memberNo}
+    </select>
+
+
+    <!--
+        insertQnaQuestion
+        - QNA_QUESTION 테이블에 문의 등록
+        - selectKey : QNA_QUESTION_SEQ.NEXTVAL → qnaVo.qnaReqNo 에 저장
+        - STATUS_CD 는 DEFAULT 'ST001' (접수) — INSERT 에서 생략
+    -->
+    <insert id="insertQnaQuestion" parameterType="com.doit.app.domain.QnaVo">
+        <selectKey keyProperty="qnaReqNo" resultType="Long" order="BEFORE">
+            SELECT QNA_QUESTION_SEQ.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO QNA_QUESTION
+            (QNA_REQ_NO, MEMBER_NO, QNA_TYPE_CD, QNA_TITLE, QNA_CONTENT, CREATE_DT)
+        VALUES
+            (#{qnaReqNo}, #{memberNo}, #{qnaTypeCd}, #{qnaTitle}, #{qnaContent}, SYSDATE)
+    </insert>
+
+</mapper>

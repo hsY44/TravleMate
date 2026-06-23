@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.doit.app.mapper.AdminContentMapper">
+
+    <!-- 조건문. 컨텐츠타입, 제목검색 -->
+    <sql id="where-list">
+        <!-- 카테고리 -->
+        <if test="category != 'all'">
+            AND A.CONTENTTYPEID = #{category}
+        </if>
+
+        <!-- 제목 OR 행사날짜검색 -->
+        <if test="kwd != null and kwd != ''">
+            AND <![CDATA[ INSTR(TITLE, #{kwd}) > 0 ]]>
+        </if>
+    </sql>
+
+    <!-- 컨텐츠 카테고리 조회 -->
+    <select id="listCategory" resultType="com.doit.app.domain.ContentCategoryVO">
+        SELECT CONTENTTYPEID, CONTENTDIV
+        FROM CONTENTCATEGORY
+    </select>
+
+    <!-- 데이터 개수 -->
+    <select id="dataCount" parameterType="map" resultType="Integer">
+        SELECT COUNT(*)
+        FROM CONTENT A
+        <where>
+            <include refid="where-list"/>
+        </where>
+    </select>
+
+    <!-- 컨텐츠 목록 -->
+    <select id="listContent" parameterType="map" resultType="com.doit.app.domain.ContentVO">
+        SELECT
+            A.CONTENTID
+            , A.APIID
+            , TITLE, ADDR1
+            , A.CONTENTTYPEID, B.CONTENTDIV
+            , FIRSTIMAGE
+            , NVL(C.REVIEW_COUNT, 0) AS REVIEWCOUNT
+            , NVL(AVG_RATING, 0) AS AVGRATING
+            , TO_CHAR(TO_DATE(A.MODIFIEDTIME, 'YYYYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS') AS MODIFIEDTIME
+        FROM CONTENT A
+        JOIN CONTENTCATEGORY B ON A.CONTENTTYPEID = B.CONTENTTYPEID
+        LEFT JOIN (
+            SELECT CONTENTID, COUNT(*) AS REVIEW_COUNT, AVG(NVL(RATING, 0)) AS AVG_RATING
+            FROM CONTENT_REVIEW
+            WHERE BLIND_YN = 'N'
+            GROUP BY CONTENTID
+        ) C ON A.CONTENTID = C.CONTENTID
+        <where>
+            <include refid="where-list"/>
+        </where>
+        ORDER BY A.MODIFIEDTIME DESC
+        OFFSET #{offset} ROWS FETCH FIRST #{size} ROWS ONLY
+    </select>
+
+    <!-- 컨텐츠 상세 -->
+    <select id="selectContentDetail" parameterType="Long" resultType="com.doit.app.domain.ContentVO">
+        SELECT
+            A.CONTENTID
+            , A.APIID
+            , TITLE, ADDR1, ADDR2
+            , A.CONTENTTYPEID, B.CONTENTDIV
+            , MAPX, MAPY
+            , FIRSTIMAGE, FIRSTIMAGE2
+            , NVL(C.REVIEW_COUNT, 0) AS REVIEWCOUNT
+            , NVL(AVG_RATING, 0) AS AVGRATING
+            , D.EVENTSTARTDATE AS EVENTSTARTDATE
+            , D.EVENTENDDATE AS EVENTENDDATE
+            , TO_CHAR(TO_DATE(A.CREATEDTIME, 'YYYYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS') AS CREATEDTIME
+            , TO_CHAR(TO_DATE(A.MODIFIEDTIME, 'YYYYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS') AS MODIFIEDTIME
+        FROM CONTENT A
+        JOIN CONTENTCATEGORY B ON A.CONTENTTYPEID = B.CONTENTTYPEID
+        LEFT JOIN (
+            SELECT CONTENTID, COUNT(*) AS REVIEW_COUNT, AVG(NVL(RATING, 0)) AS AVG_RATING
+            FROM CONTENT_REVIEW
+            WHERE BLIND_YN = 'N'
+            GROUP BY CONTENTID
+        ) C ON A.CONTENTID = C.CONTENTID
+        LEFT JOIN CONTENTEVENT D ON A.CONTENTID = D.CONTENTID
+        WHERE A.CONTENTID = #{contentId}
+    </select>
+
+    <!-- 컨텐츠 상세에서 컨텐츠 이미지들 -->
+    <select id="selectContentImages" parameterType="Long" resultType="com.doit.app.domain.ContentImageVO">
+        SELECT CONTENTIMAGEID, ORIGINIMGURL, IMGNAME
+        FROM CONTENTIMAGE
+        WHERE APIID = (SELECT APIID FROM CONTENT WHERE CONTENTID = #{contentId})
+    </select>
+
+</mapper>

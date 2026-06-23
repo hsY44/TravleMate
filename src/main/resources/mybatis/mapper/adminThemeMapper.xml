@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.doit.app.mapper.AdminThemeMapper">
+
+    <!-- 테마 전체 목록 (사용 중인 계획 수 포함) -->
+    <select id="selectAllThemes" resultType="com.doit.app.domain.ThemeVo">
+        SELECT TT.TRAVEL_THEME_CD                                AS travelThemeCd
+             , TT.TRAVEL_THEME_NM                                AS travelThemeNm
+             , (SELECT COUNT(*)
+                  FROM TRAVEL_PLAN TP
+                 WHERE TP.TRAVEL_THEME_CD = TT.TRAVEL_THEME_CD) AS planCount
+          FROM TRAVEL_THEME TT
+         ORDER BY TT.TRAVEL_THEME_CD ASC
+    </select>
+
+    <!-- 코드 중복 확인 -->
+    <select id="countThemeCd" resultType="int">
+        SELECT COUNT(*) FROM TRAVEL_THEME WHERE TRAVEL_THEME_CD = #{cd}
+    </select>
+
+    <!-- 테마 등록 -->
+    <insert id="insertTheme">
+        INSERT INTO TRAVEL_THEME (TRAVEL_THEME_CD, TRAVEL_THEME_NM)
+        VALUES (#{cd}, #{nm})
+    </insert>
+
+    <!-- 테마 이름 수정 (코드는 PK이므로 변경 불가) -->
+    <update id="updateTheme">
+        UPDATE TRAVEL_THEME
+           SET TRAVEL_THEME_NM = #{nm}
+         WHERE TRAVEL_THEME_CD = #{cd}
+    </update>
+
+    <!-- 해당 테마를 사용 중인 여행계획 수 -->
+    <select id="countPlansByThemeCd" resultType="int">
+        SELECT COUNT(*) FROM TRAVEL_PLAN WHERE TRAVEL_THEME_CD = #{cd}
+    </select>
+
+    <!-- 테마 삭제 (사용 중인 계획 없을 때만 호출) -->
+    <delete id="deleteTheme">
+        DELETE FROM TRAVEL_THEME WHERE TRAVEL_THEME_CD = #{cd}
+    </delete>
+
+</mapper>

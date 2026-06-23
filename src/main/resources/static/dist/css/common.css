@@ -1,0 +1,129 @@
+@charset "UTF-8";
+/* ── 기본 ── */
+body {
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* ── 스크롤바 숨김 ── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── 모달 ── */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(15, 23, 42, 0.4);
+    padding: 1rem;
+    overflow-y: auto;
+}
+.modal-box {
+    width: 100%;
+    max-width: 28rem;
+    border-radius: 1rem;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    padding: 1.5rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* ── 탭 활성 언더라인 ── */
+.tab-btn {
+    padding-bottom: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: color 0.15s;
+    color: #94a3b8;
+    border-bottom: 2px solid transparent;
+}
+.tab-btn:hover { color: #475569; }
+.tab-btn.active {
+    color: #0ea5e9;
+    border-bottom-color: #0ea5e9;
+}
+
+/* ── 토스트 ── */
+.toast {
+    position: fixed;
+    bottom: 5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+.toast.success { background: #10b981; }
+.toast.error   { background: #ef4444; }
+.toast.info    { background: #0ea5e9; }
+
+/* ── 별점 입력 ── */
+.star-rating { display: flex; gap: 0.25rem; flex-direction: row-reverse; }
+.star-rating input { display: none; }
+.star-rating label {
+    cursor: pointer;
+    color: #cbd5e1;
+    font-size: 1.5rem;
+    transition: color 0.1s;
+}
+.star-rating label::before { content: "★"; }
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label { color: #fbbf24; }
+
+/* ── 드로어 (관리자 회원상세) ── */
+.drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background-color: rgba(15, 23, 42, 0.4);
+    transition: opacity 0.2s;
+}
+.drawer-backdrop.hidden { opacity: 0; pointer-events: none; }
+
+.drawer-panel {
+    position: fixed;
+    inset-y: 0;
+    right: 0;
+    z-index: 40;
+    width: 420px;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #e2e8f0;
+    background: #fff;
+    box-shadow: -4px 0 20px rgba(0,0,0,0.08);
+    transition: transform 0.25s ease;
+}
+.drawer-panel.closed { transform: translateX(100%); }
+
+/* ── 이미지 갤러리 ── */
+.gallery-thumb {
+    cursor: pointer;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 2px solid transparent;
+    transition: border-color 0.15s;
+}
+.gallery-thumb.active { border-color: #0ea5e9; }
+
+/* ── 스텝 인디케이터 ── */
+.step-line {
+    flex: 0 0 2.5rem;
+    height: 2px;
+    margin-bottom: 1.25rem;
+    background: #e2e8f0;
+    transition: background 0.2s;
+}
+.step-line.done { background: #10b981; }

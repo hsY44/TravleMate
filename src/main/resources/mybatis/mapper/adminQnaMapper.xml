@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    adminQnaMapper.xml
+    - 관리자 문의 관련 SQL
+    - namespace : com.doit.app.mapper.AdminQnaMapper
+-->
+<mapper namespace="com.doit.app.mapper.AdminQnaMapper">
+
+    <!-- resultMap : QnaVo (관리자용 — memberNickname 포함) -->
+    <resultMap id="adminQnaVoMap" type="com.doit.app.domain.QnaVo">
+        <id     column="QNA_REQ_NO"       property="qnaReqNo"/>
+        <result column="MEMBER_NO"        property="memberNo"/>
+        <result column="QNA_TYPE_CD"      property="qnaTypeCd"/>
+        <result column="QNA_TYPE_NM"      property="qnaTypeNm"/>
+        <result column="QNA_TITLE"        property="qnaTitle"/>
+        <result column="QNA_CONTENT"      property="qnaContent"/>
+        <result column="STATUS_CD"        property="statusCd"/>
+        <result column="CREATE_DT"        property="createDt"/>
+        <result column="ANS_CONTENT"      property="ansContent"/>
+        <result column="MEMBER_NICKNAME"  property="memberNickname"/>
+    </resultMap>
+
+
+    <!--
+        selectQnaTypes
+        - 문의 카테고리 전체 조회 — 이름순
+    -->
+    <select id="selectQnaTypes" resultType="com.doit.app.domain.QnaTypeVo">
+        SELECT QNA_TYPE_CD  AS qnaTypeCd
+             , QNA_TYPE_NM  AS qnaTypeNm
+          FROM QNA_TYPE
+         ORDER BY QNA_TYPE_NM
+    </select>
+
+
+    <!--
+        insertQnaType
+        - 문의 카테고리 등록
+    -->
+    <insert id="insertQnaType" parameterType="com.doit.app.domain.QnaTypeVo">
+        INSERT INTO QNA_TYPE (QNA_TYPE_CD, QNA_TYPE_NM)
+        VALUES (#{qnaTypeCd}, #{qnaTypeNm})
+    </insert>
+
+
+    <!--
+        updateQnaType
+        - 문의 카테고리 이름 수정
+    -->
+    <update id="updateQnaType" parameterType="com.doit.app.domain.QnaTypeVo">
+        UPDATE QNA_TYPE
+           SET QNA_TYPE_NM = #{qnaTypeNm}
+         WHERE QNA_TYPE_CD = #{qnaTypeCd}
+    </update>
+
+
+    <!--
+        countAllQnas
+        - 전체 문의 수
+    -->
+    <select id="countAllQnas" resultType="int">
+        SELECT COUNT(*) FROM QNA_QUESTION
+    </select>
+
+
+    <!--
+        selectAllQnas
+        - 전체 문의 목록 — 페이징
+        - QNA_TYPE JOIN, MEMBER_ACTIVE JOIN(닉네임), LEFT JOIN QNA_ANSWER
+        - 등록일 역순 정렬
+    -->
+    <select id="selectAllQnas" resultMap="adminQnaVoMap">
+        SELECT *
+          FROM (
+               SELECT ROWNUM AS RN
+                    , T.*
+                 FROM (
+                      SELECT Q.QNA_REQ_NO
+                           , Q.MEMBER_NO
+                           , Q.QNA_TYPE_CD
+                           , QT.QNA_TYPE_NM
+                           , Q.QNA_TITLE
+                           , Q.STATUS_CD
+                           , TO_CHAR(Q.CREATE_DT, 'YYYY-MM-DD') AS CREATE_DT
+                           , A.NICKNAME                          AS MEMBER_NICKNAME
+                        FROM QNA_QUESTION Q
+                        JOIN QNA_TYPE     QT ON QT.QNA_TYPE_CD = Q.QNA_TYPE_CD
+                        JOIN MEMBER_ACTIVE A  ON A.MEMBER_NO   = Q.MEMBER_NO
+                       ORDER BY Q.CREATE_DT DESC
+                      ) T
+                WHERE ROWNUM &lt;= #{endRow}
+               )
+         WHERE RN >= #{startRow}
+    </select>
+
+
+    <!--
+        selectQnaDetailForAdmin
+        - 문의 단건 조회 (관리자용)
+        - memberNo 조건 없이 QNA_REQ_NO 만으로 조회
+    -->
+    <select id="selectQnaDetailForAdmin" resultMap="adminQnaVoMap">
+        SELECT Q.QNA_REQ_NO
+             , Q.MEMBER_NO
+             , Q.QNA_TYPE_CD
+             , QT.QNA_TYPE_NM
+             , Q.QNA_TITLE
+             , Q.QNA_CONTENT
+             , Q.STATUS_CD
+             , TO_CHAR(Q.CREATE_DT, 'YYYY-MM-DD') AS CREATE_DT
+             , ANS.ANS_CONTENT
+             , A.NICKNAME                          AS MEMBER_NICKNAME
+          FROM QNA_QUESTION Q
+          JOIN QNA_TYPE       QT  ON QT.QNA_TYPE_CD = Q.QNA_TYPE_CD
+          JOIN MEMBER_ACTIVE  A   ON A.MEMBER_NO    = Q.MEMBER_NO
+          LEFT JOIN QNA_ANSWER ANS ON ANS.QNA_REQ_NO = Q.QNA_REQ_NO
+         WHERE Q.QNA_REQ_NO = #{qnaReqNo}
+    </select>
+
+
+    <!--
+        insertQnaAnswer
+        - 답변 등록 (QNA_ANSWER_SEQ 사용)
+    -->
+    <insert id="insertQnaAnswer">
+        INSERT INTO QNA_ANSWER (QNA_ANS_NO, QNA_REQ_NO, ADMIN_NO, ANS_CONTENT)
+        VALUES (QNA_ANSWER_SEQ.NEXTVAL, #{qnaReqNo}, #{adminNo}, #{ansContent})
+    </insert>
+
+
+    <!--
+        updateQnaStatus
+        - 문의 상태를 ST002(답변완료)로 변경
+    -->
+    <update id="updateQnaStatus">
+        UPDATE QNA_QUESTION
+           SET STATUS_CD = 'ST002'
+         WHERE QNA_REQ_NO = #{qnaReqNo}
+    </update>
+
+</mapper>

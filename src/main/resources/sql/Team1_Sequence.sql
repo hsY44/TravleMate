@@ -1,0 +1,172 @@
+/*==========================================================
+    Team1_Sequence.sql
+    - TravelMate 프로젝트 시퀀스 DDL
+    - Oracle DB / FFINAL1 계정
+
+    실행 순서:
+      1. [FFINAL1] Team1_Table.sql      먼저 실행
+      2. [FFINAL1] Team1_Sequence.sql   (현재 파일)
+      3. [FFINAL1] Team1_procedure.sql
+      4. [FFINAL1] Team1_query.sql
+==========================================================*/
+
+
+/* ─────────────────────────────────────────────
+   관리자
+   ───────────────────────────────────────────── */
+
+-- ADMIN_ACCOUNT.ADMIN_NO 용
+CREATE SEQUENCE ADMIN_ACCOUNT_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+
+/* ─────────────────────────────────────────────
+   회원
+   ───────────────────────────────────────────── */
+
+-- MEMBER_MASTER.MEMBER_NO 용 (MEMBER_ACTIVE.MEMBER_NO 도 동일 값 사용)
+CREATE SEQUENCE MEMBER_MASTER_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+-- MEMBER_SANCTION.SANCTION_NO 용
+CREATE SEQUENCE MEMBER_SANCTION_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+-- MEMBER_BOOKMARK.BOOKMARK_NO 용
+CREATE SEQUENCE MEMBER_BOOKMARK_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+
+/* ─────────────────────────────────────────────
+   공지사항 / FAQ / QNA
+   ───────────────────────────────────────────── */
+
+-- NOTICE.NOTICE_NO 용
+CREATE SEQUENCE NOTICE_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+-- FAQ.FAQ_NO 용
+CREATE SEQUENCE FAQ_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+-- QNA_QUESTION.QNA_REQ_NO 용
+CREATE SEQUENCE QNA_QUESTION_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+-- QNA_ANSWER.QNA_ANS_NO 용
+CREATE SEQUENCE QNA_ANSWER_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+
+/* ─────────────────────────────────────────────
+   컨텐츠 / 리뷰
+   ───────────────────────────────────────────── */
+
+-- CONTENT.CONTENTID 용
+CREATE SEQUENCE SEQ_CONTENTID
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+-- IMAGE.CONTENTIMAGEID 용
+CREATE SEQUENCE SEQ_CONTENTIMAGEID
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+-- CONTENT_REVIEW.CONTENT_REVIEW_NO 용
+CREATE SEQUENCE CONTENT_REVIEW_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+
+/* ─────────────────────────────────────────────
+   여행 계획
+   ───────────────────────────────────────────── */
+
+-- TRAVEL_PLAN.TRAVEL_PLAN_NO 용
+CREATE SEQUENCE TRAVEL_PLAN_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+-- TRAVEL_ITINERARY.TRAVEL_ITINERARY_NO 용
+CREATE SEQUENCE TRAVEL_ITINERARY_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+-- TRAVEL_ITINERARY_HIST.ITINERARY_HIST_NO 용
+CREATE SEQUENCE TRAVEL_ITINERARY_HIST_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+-- TRAVEL_INVITATION.TRAVEL_INVITATION_NO 용
+CREATE SEQUENCE TRAVEL_INVITATION_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+-- PLAN_GUEST.PLAN_GUEST_NO 용
+CREATE SEQUENCE PLAN_GUEST_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;
+
+-- ITINERARY_EXPENSE.ITINERARY_EXPENSE_NO 용
+CREATE SEQUENCE ITINERARY_EXPENSE_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOMAXVALUE
+    NOCYCLE
+    NOCACHE;

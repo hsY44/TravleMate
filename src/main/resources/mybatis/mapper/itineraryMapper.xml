@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.doit.app.mapper.ItineraryMapper">
+
+    <!-- ══ 일정 (TRAVEL_ITINERARY) ══ -->
+
+    <select id="selectSchedules" resultType="com.doit.app.domain.ScheduleVo">
+        SELECT TI.TRAVEL_ITINERARY_NO                    AS id
+             , TI.TRAVEL_PLAN_NO                         AS planNo
+             , TO_CHAR(TI.ITINERARY_DT, 'YYYY-MM-DD')   AS itineraryDt
+             , TI.ITINERARY_TIME                         AS time
+             , TI.ITINERARY_NM                           AS title
+             , TI.ITINERARY_MEMO                         AS content
+             , TI.CONTENT_NO                             AS contentNo
+             , C.TITLE                                   AS contentName
+             , C.FIRSTIMAGE                              AS contentImage
+             , NVL(IE.EXPENSE_AMT,    0)                 AS cost
+             , NVL(IE.ESTIMATED_AMT,  0)                 AS estimatedCost
+             , IET.EXPENSE_TYPE_NM                       AS costCategory
+             , IE.PAYMENT_METHOD                         AS paymentMethod
+             , IE.EXPENSE_MEMO                           AS expenseMemo
+          FROM TRAVEL_ITINERARY TI
+          LEFT JOIN ITINERARY_EXPENSE      IE  ON IE.TRAVEL_ITINERARY_NO  = TI.TRAVEL_ITINERARY_NO
+          LEFT JOIN ITINERARY_EXPENSE_TYPE IET ON IET.EXPENSE_TYPE_CD     = IE.ITINERARY_EXPENSE_TYPE
+          LEFT JOIN CONTENT                C   ON C.CONTENTID             = TI.CONTENT_NO
+         WHERE TI.TRAVEL_PLAN_NO = #{planNo}
+           AND NOT EXISTS (
+               SELECT 1 FROM TRAVEL_ITINERARY_DEL D
+                WHERE D.TRAVEL_ITINERARY_NO = TI.TRAVEL_ITINERARY_NO
+           )
+         ORDER BY TI.ITINERARY_DT ASC, TI.ITINERARY_TIME ASC
+    </select>
+
+    <select id="selectSchedule" resultType="com.doit.app.domain.ScheduleVo">
+        SELECT TI.TRAVEL_ITINERARY_NO                    AS id
+             , TI.TRAVEL_PLAN_NO                         AS planNo
+             , TO_CHAR(TI.ITINERARY_DT, 'YYYY-MM-DD')   AS itineraryDt
+             , TI.ITINERARY_TIME                         AS time
+             , TI.ITINERARY_NM                           AS title
+             , TI.ITINERARY_MEMO                         AS content
+             , TI.CONTENT_NO                             AS contentNo
+             , C.TITLE                                   AS contentName
+             , C.FIRSTIMAGE                              AS contentImage
+             , NVL(IE.EXPENSE_AMT,    0)                 AS cost
+             , NVL(IE.ESTIMATED_AMT,  0)                 AS estimatedCost
+             , IET.EXPENSE_TYPE_NM                       AS costCategory
+             , IE.PAYMENT_METHOD                         AS paymentMethod
+             , IE.EXPENSE_MEMO                           AS expenseMemo
+          FROM TRAVEL_ITINERARY TI
+          LEFT JOIN ITINERARY_EXPENSE      IE  ON IE.TRAVEL_ITINERARY_NO  = TI.TRAVEL_ITINERARY_NO
+          LEFT JOIN ITINERARY_EXPENSE_TYPE IET ON IET.EXPENSE_TYPE_CD     = IE.ITINERARY_EXPENSE_TYPE
+          LEFT JOIN CONTENT                C   ON C.CONTENTID             = TI.CONTENT_NO
+         WHERE TI.TRAVEL_ITINERARY_NO = #{no}
+           AND TI.TRAVEL_PLAN_NO      = #{planNo}
+           AND NOT EXISTS (
+               SELECT 1 FROM TRAVEL_ITINERARY_DEL D
+                WHERE D.TRAVEL_ITINERARY_NO = TI.TRAVEL_ITINERARY_NO
+           )
+    </select>
+
+    <!-- null 컬럼은 아예 포함하지 않아 jdbcType 불필요 -->
+    <insert id="insertSchedule" parameterType="com.doit.app.domain.ScheduleVo">
+        <selectKey keyProperty="id" resultType="Long" order="BEFORE">
+            SELECT TRAVEL_ITINERARY_SEQ.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO TRAVEL_ITINERARY
+            (TRAVEL_ITINERARY_NO, TRAVEL_PLAN_NO, ITINERARY_DT, ITINERARY_NM
+            <if test="time != null and time != ''">, ITINERARY_TIME</if>
+            <if test="content != null and content != ''">, ITINERARY_MEMO</if>
+            <if test="contentNo != null">, CONTENT_NO</if>
+            )
+        VALUES
+            (#{id}, #{planNo}, TO_DATE(#{itineraryDt}, 'YYYY-MM-DD'), #{title}
+            <if test="time != null and time != ''">, #{time}</if>
+            <if test="content != null and content != ''">, #{content}</if>
+            <if test="contentNo != null">, #{contentNo}</if>
+            )
+    </insert>
+
+    <update id="updateSchedule" parameterType="com.doit.app.domain.ScheduleVo">
+        UPDATE TRAVEL_ITINERARY
+        <set>
+            ITINERARY_DT   = TO_DATE(#{itineraryDt}, 'YYYY-MM-DD'),
+            ITINERARY_NM   = #{title},
+            ITINERARY_TIME = <if test="time != null and time != ''">#{time}</if><if test="time == null or time == ''">NULL</if>,
+            ITINERARY_MEMO = <if test="content != null and content != ''">#{content}</if><if test="content == null or content == ''">NULL</if>,
+            CONTENT_NO     = <if test="contentNo != null">#{contentNo}</if><if test="contentNo == null">NULL</if>
+        </set>
+         WHERE TRAVEL_ITINERARY_NO = #{id}
+           AND TRAVEL_PLAN_NO      = #{planNo}
+    </update>
+
+    <delete id="deleteSchedule">
+        DELETE FROM TRAVEL_ITINERARY
+         WHERE TRAVEL_ITINERARY_NO = #{no}
+           AND TRAVEL_PLAN_NO      = #{planNo}
+    </delete>
+
+
+    <!-- ══ 비용 (ITINERARY_EXPENSE) ══ -->
+
+    <!--
+        insertExpense : 일정 비용 저장
+        - ESTIMATED_AMT  : 예상 비용 (0이면 DEFAULT 0)
+        - EXPENSE_AMT    : 실제 지출
+        - PAYMENT_METHOD / EXPENSE_MEMO : 선택값 (null 허용)
+        - MIN() : 동일 이름 코드가 여러 개여도 단일 결과 보장
+        - NVL   : 매칭 코드 없으면 '기타' 코드로 fallback
+    -->
+    <insert id="insertExpense">
+        INSERT INTO ITINERARY_EXPENSE
+            (ITINERARY_EXPENSE_NO, TRAVEL_ITINERARY_NO,
+             EXPENSE_AMT, ESTIMATED_AMT, ITINERARY_EXPENSE_TYPE,
+             PAYMENT_METHOD, EXPENSE_MEMO)
+        VALUES
+            (ITINERARY_EXPENSE_SEQ.NEXTVAL,
+             #{itineraryNo},
+             #{amount},
+             #{estimatedAmt},
+             NVL(
+                 (SELECT MIN(EXPENSE_TYPE_CD) FROM ITINERARY_EXPENSE_TYPE WHERE EXPENSE_TYPE_NM = #{typeName}),
+                 (SELECT MIN(EXPENSE_TYPE_CD) FROM ITINERARY_EXPENSE_TYPE WHERE EXPENSE_TYPE_NM = '기타')
+             ),
+             #{paymentMethod, jdbcType=VARCHAR},
+             #{expenseMemo,   jdbcType=VARCHAR})
+    </insert>
+
+    <delete id="deleteExpenseByItineraryNo">
+        DELETE FROM ITINERARY_EXPENSE
+         WHERE TRAVEL_ITINERARY_NO = #{itineraryNo}
+    </delete>
+
+    <select id="selectCostSummary" resultType="com.doit.app.domain.CostSummaryVo">
+        SELECT IET.EXPENSE_TYPE_NM            AS category
+             , SUM(IE.EXPENSE_AMT)            AS total
+             , SUM(NVL(IE.ESTIMATED_AMT,  0)) AS estimatedTotal
+          FROM ITINERARY_EXPENSE      IE
+          JOIN ITINERARY_EXPENSE_TYPE IET ON IET.EXPENSE_TYPE_CD    = IE.ITINERARY_EXPENSE_TYPE
+          JOIN TRAVEL_ITINERARY       TI  ON TI.TRAVEL_ITINERARY_NO = IE.TRAVEL_ITINERARY_NO
+         WHERE TI.TRAVEL_PLAN_NO = #{planNo}
+         GROUP BY IET.EXPENSE_TYPE_NM
+         ORDER BY total DESC
+    </select>
+
+    <select id="selectTotalCost" resultType="long">
+        SELECT NVL(SUM(IE.EXPENSE_AMT), 0)
+          FROM ITINERARY_EXPENSE IE
+          JOIN TRAVEL_ITINERARY  TI ON TI.TRAVEL_ITINERARY_NO = IE.TRAVEL_ITINERARY_NO
+         WHERE TI.TRAVEL_PLAN_NO = #{planNo}
+    </select>
+
+    <select id="selectTotalEstimatedCost" resultType="long">
+        SELECT NVL(SUM(IE.ESTIMATED_AMT), 0)
+          FROM ITINERARY_EXPENSE IE
+          JOIN TRAVEL_ITINERARY  TI ON TI.TRAVEL_ITINERARY_NO = IE.TRAVEL_ITINERARY_NO
+         WHERE TI.TRAVEL_PLAN_NO = #{planNo}
+    </select>
+
+    <!-- 드롭다운용 카테고리 이름 목록 -->
+    <select id="selectExpenseTypeNames" resultType="String">
+        SELECT EXPENSE_TYPE_NM
+          FROM ITINERARY_EXPENSE_TYPE
+         ORDER BY EXPENSE_TYPE_CD ASC
+    </select>
+
+
+    <!-- ══ 삭제 이력 (TRAVEL_ITINERARY_DEL) ══ -->
+
+    <!--
+        insertDeleteRecord
+        - 일정 삭제 시 TRAVEL_ITINERARY_DEL 에 이력 기록
+        - TRAVEL_ITINERARY_DEL 은 FK 제약 없음 → ITINERARY 삭제 후에도 영구 보존
+        - DEL_DT : DEFAULT SYSDATE (INSERT 시 생략 가능하나 명시)
+        - removeSchedule 에서 deleteExpenseByItineraryNo 호출 전에 실행
+    -->
+    <insert id="insertDeleteRecord">
+        INSERT INTO TRAVEL_ITINERARY_DEL
+            (ITINERARY_DEL_NO, TRAVEL_ITINERARY_NO, DEL_DT, DELETER_GUEST_NO)
+        VALUES
+            (TRAVEL_ITINERARY_DEL_SEQ.NEXTVAL, #{itineraryNo}, SYSDATE, #{deleterGuestNo, jdbcType=NUMERIC})
+    </insert>
+
+
+    <!-- ══ 이력 (TRAVEL_ITINERARY_HIST) ══ -->
+
+    <!--
+        actionTypeNm("생성"/"수정"/"삭제") → ACTION_TYPE_CD 서브쿼리
+        CD 값을 코드에서 가정하지 않으므로 DB 값 변경에 영향 없음
+    -->
+    <insert id="insertHistory">
+        INSERT INTO TRAVEL_ITINERARY_HIST
+            (ITINERARY_HIST_NO, TRAVEL_ITINERARY_NO,
+             ACTION_TYPE_CD, PLAN_GUEST_NO, ITINERARY_NM)
+        VALUES
+            (TRAVEL_ITINERARY_HIST_SEQ.NEXTVAL,
+             #{itineraryNo},
+             (SELECT ACTION_TYPE_CD FROM ACTION_TYPE WHERE ACTION_TYPE_NM = #{actionTypeNm}),
+             #{planGuestNo, jdbcType=NUMERIC},
+             #{target})
+    </insert>
+
+    <select id="selectHistory" resultType="com.doit.app.domain.HistoryVo">
+        SELECT AT.ACTION_TYPE_NM                           AS type
+             , TH.ITINERARY_NM                            AS target
+             , MA.NICKNAME                                AS editor
+             , TO_CHAR(TH.EDIT_DT, 'YYYY-MM-DD HH24:MI') AS editedAt
+          FROM TRAVEL_ITINERARY_HIST TH
+          JOIN TRAVEL_ITINERARY      TI  ON TI.TRAVEL_ITINERARY_NO = TH.TRAVEL_ITINERARY_NO
+          JOIN ACTION_TYPE           AT  ON AT.ACTION_TYPE_CD      = TH.ACTION_TYPE_CD
+          JOIN PLAN_GUEST            PG  ON PG.PLAN_GUEST_NO       = TH.PLAN_GUEST_NO
+          JOIN MEMBER_ACTIVE         MA  ON MA.MEMBER_NO           = PG.MEMBER_NO
+         WHERE TI.TRAVEL_PLAN_NO = #{planNo}
+         ORDER BY TH.EDIT_DT DESC
+    </select>
+
+
+    <!-- ══ 보조 조회 ══ -->
+
+    <select id="selectPlanStartDate" resultType="String">
+        SELECT TO_CHAR(TRAVEL_START_DT, 'YYYY-MM-DD')
+          FROM TRAVEL_PLAN
+         WHERE TRAVEL_PLAN_NO = #{planNo}
+    </select>
+
+    <!--
+        selectPlanDates : 시작·종료일 조회 (일정 편집 잠금 판단용)
+        - 여행 전날까지     → 편집 가능
+        - 여행 중           → 잠금
+        - 종료 후 7일 이내  → 편집 가능
+        - 종료 후 7일 초과  → 잠금
+    -->
+    <select id="selectPlanDates" resultType="com.doit.app.domain.PlanDatesVo">
+        SELECT TO_CHAR(TRAVEL_START_DT, 'YYYY-MM-DD') AS startDt
+             , TO_CHAR(TRAVEL_END_DT,   'YYYY-MM-DD') AS endDt
+          FROM TRAVEL_PLAN
+         WHERE TRAVEL_PLAN_NO = #{planNo}
+    </select>
+
+    <!--
+        selectPlanGuestNo : 활성 게스트의 PLAN_GUEST_NO 조회
+        - PLAN_GUEST_LEAVE 가 있는 게스트(탈퇴·내보내기)는 제외
+    -->
+    <select id="selectPlanGuestNo" resultType="Long">
+        SELECT PG.PLAN_GUEST_NO
+          FROM PLAN_GUEST PG
+         WHERE PG.TRAVEL_PLAN_NO = #{planNo}
+           AND PG.MEMBER_NO      = #{memberNo}
+           AND NOT EXISTS (
+               SELECT 1 FROM PLAN_GUEST_LEAVE PGL
+                WHERE PGL.PLAN_GUEST_NO = PG.PLAN_GUEST_NO
+           )
+    </select>
+
+    <!--
+        selectGuestCanEdit : 게스트 편집 권한 조회 (CAN_EDIT 값 반환)
+        - 탈퇴·내보내기된 게스트 제외 (PLAN_GUEST_LEAVE 없는 경우만)
+        - NULL(ALTER DEFAULT 미적용 기존 행) 이면 NVL 로 1 처리
+        - 결과 없음(참여자 아님·탈퇴) → null 반환
+    -->
+    <select id="selectGuestCanEdit" resultType="Integer">
+        SELECT NVL(PG.CAN_EDIT, 1)
+          FROM PLAN_GUEST PG
+         WHERE PG.TRAVEL_PLAN_NO = #{planNo}
+           AND PG.MEMBER_NO      = #{memberNo}
+           AND NOT EXISTS (
+               SELECT 1 FROM PLAN_GUEST_LEAVE PGL
+                WHERE PGL.PLAN_GUEST_NO = PG.PLAN_GUEST_NO
+           )
+    </select>
+
+
+    <!-- ══ ACTION_TYPE — 관리자 파트 ══ -->
+
+    <select id="selectAllActionTypes" resultType="com.doit.app.domain.ActionTypeVo">
+        SELECT ACTION_TYPE_CD AS actionTypeCd
+             , ACTION_TYPE_NM AS actionTypeNm
+          FROM ACTION_TYPE
+         ORDER BY ACTION_TYPE_CD ASC
+    </select>
+
+    <insert id="insertActionType">
+        INSERT INTO ACTION_TYPE (ACTION_TYPE_CD, ACTION_TYPE_NM) VALUES (#{cd}, #{nm})
+    </insert>
+
+    <update id="updateActionType">
+        UPDATE ACTION_TYPE SET ACTION_TYPE_NM = #{nm} WHERE ACTION_TYPE_CD = #{cd}
+    </update>
+
+    <select id="countActionType" resultType="int">
+        SELECT COUNT(*) FROM ACTION_TYPE WHERE ACTION_TYPE_CD = #{cd}
+    </select>
+
+    <!-- 일정 삭제 전 이력 먼저 삭제 (FK 제약조건 회피) -->
+    <delete id="deleteHistoryByItineraryNo">
+        DELETE FROM TRAVEL_ITINERARY_HIST
+         WHERE TRAVEL_ITINERARY_NO = #{itineraryNo}
+    </delete>
+
+</mapper>

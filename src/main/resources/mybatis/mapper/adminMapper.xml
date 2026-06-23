@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    adminMapper.xml
+    - 관리자 관련 SQL
+    - namespace : com.doit.app.mapper.AdminMapper
+
+    ※ DB 컬럼명 ↔ Java 필드명 매핑 주의 항목
+       ADMIN_ACCOUNT.ID      → loginId
+       ADMIN_ACCOUNT.ADMIN_NO → adminNo
+-->
+<mapper namespace="com.doit.app.mapper.AdminMapper">
+
+    <!--
+        resultMap : AdminVo
+        - ADMIN_NO → adminNo
+        - ID       → loginId
+    -->
+    <resultMap id="adminVoMap" type="com.doit.app.domain.AdminVo">
+        <id     column="ADMIN_NO" property="adminNo"/>
+        <result column="ID"       property="loginId"/>
+        <!-- pw 는 세션에 저장하지 않으므로 매핑 제외 -->
+    </resultMap>
+
+
+    <!--
+        selectAdminLogin
+        - 아이디·비밀번호로 관리자 조회
+        - PW 는 입력값을 ENCRYPT 한 결과와 DB 저장값 비교
+    -->
+    <select id="selectAdminLogin" resultMap="adminVoMap">
+        SELECT ADMIN_NO
+             , ID
+          FROM ADMIN_ACCOUNT
+         WHERE ID = #{loginId}
+           AND PW = CRYPTPACK.ENCRYPT(#{pw}, #{encKey})
+    </select>
+
+
+    <!-- resultMap : AdminMemberVo -->
+    <resultMap id="adminMemberVoMap" type="com.doit.app.domain.AdminMemberVo">
+        <id     column="MEMBER_NO" property="memberNo"/>
+        <result column="NAME"      property="name"/>
+        <result column="NICKNAME"  property="nickname"/>
+        <result column="ID"        property="loginId"/>
+        <result column="EMAIL"     property="email"/>
+        <result column="PHONE_NO"  property="phoneNo"/>
+        <result column="CREATE_DT" property="createDt"/>
+        <result column="LEAVE_DT"  property="leaveDt"/>
+    </resultMap>
+
+
+    <!--
+        countActiveMembers
+        - 활동 회원 수 (keyword 검색 포함)
+    -->
+    <select id="countActiveMembers" resultType="int">
+        SELECT COUNT(*)
+          FROM MEMBER_ACTIVE A
+          JOIN MEMBER_MASTER M ON M.MEMBER_NO = A.MEMBER_NO
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (UPPER(A.NICKNAME) LIKE '%' || UPPER(#{keyword}) || '%'
+                 OR UPPER(A.ID)    LIKE '%' || UPPER(#{keyword}) || '%'
+                 OR UPPER(A.EMAIL) LIKE '%' || UPPER(#{keyword}) || '%')
+            </if>
+        </where>
+    </select>
+
+
+    <!--
+        selectActiveMembers
+        - 활동 회원 목록 — 페이징 (Oracle ROWNUM 서브쿼리 방식)
+        - keyword 로 닉네임·아이디·이메일 검색, 가입일 역순 정렬
+    -->
+    <select id="selectActiveMembers" resultMap="adminMemberVoMap">
+        SELECT *
+          FROM (
+               SELECT ROWNUM AS RN
+                    , T.*
+                 FROM (
+                      SELECT A.MEMBER_NO
+                           , A.NAME
+                           , A.NICKNAME
+                           , A.ID
+                           , A.EMAIL
+                           , A.PHONE_NO
+                           , TO_CHAR(M.CREATE_DT, 'YYYY-MM-DD') AS CREATE_DT
+                        FROM MEMBER_ACTIVE A
+                        JOIN MEMBER_MASTER M ON M.MEMBER_NO = A.MEMBER_NO
+                        <where>
+                            <if test="keyword != null and keyword != ''">
+                                (UPPER(A.NICKNAME) LIKE '%' || UPPER(#{keyword}) || '%'
+                                 OR UPPER(A.ID)    LIKE '%' || UPPER(#{keyword}) || '%'
+                                 OR UPPER(A.EMAIL) LIKE '%' || UPPER(#{keyword}) || '%')
+                            </if>
+                        </where>
+                       ORDER BY M.CREATE_DT DESC
+                      ) T
+                WHERE ROWNUM &lt;= #{endRow}
+               )
+         WHERE RN >= #{startRow}
+    </select>
+
+
+    <!--
+        selectActiveMemberByNo
+        - 활동 회원 단건 조회
+    -->
+    <select id="selectActiveMemberByNo" resultMap="adminMemberVoMap">
+        SELECT A.MEMBER_NO
+             , A.NAME
+             , A.NICKNAME
+             , A.ID
+             , A.EMAIL
+             , A.PHONE_NO
+             , TO_CHAR(M.CREATE_DT, 'YYYY-MM-DD') AS CREATE_DT
+          FROM MEMBER_ACTIVE A
+          JOIN MEMBER_MASTER M ON M.MEMBER_NO = A.MEMBER_NO
+         WHERE A.MEMBER_NO = #{memberNo}
+    </select>
+
+
+    <!--
+        countLeaveMembers
+        - 탈퇴 회원 수
+    -->
+    <select id="countLeaveMembers" resultType="int">
+        SELECT COUNT(*) FROM MEMBER_LEAVE
+    </select>
+
+
+    <!--
+        selectLeaveMembers
+        - 탈퇴 회원 목록 — 페이징
+        - 탈퇴일 역순 정렬
+    -->
+    <select id="selectLeaveMembers" resultMap="adminMemberVoMap">
+        SELECT *
+          FROM (
+               SELECT ROWNUM AS RN
+                    , T.*
+                 FROM (
+                      SELECT MEMBER_NO
+                           , NAME
+                           , NICKNAME
+                           , ID
+                           , EMAIL
+                           , PHONE_NO
+                           , TO_CHAR(LEAVE_DT, 'YYYY-MM-DD') AS LEAVE_DT
+                        FROM MEMBER_LEAVE
+                       ORDER BY LEAVE_DT DESC
+                      ) T
+                WHERE ROWNUM &lt;= #{endRow}
+               )
+         WHERE RN >= #{startRow}
+    </select>
+
+
+    <!--
+        selectLeaveMemberByNo
+        - 탈퇴 회원 단건 조회
+    -->
+    <select id="selectLeaveMemberByNo" resultMap="adminMemberVoMap">
+        SELECT MEMBER_NO
+             , NAME
+             , NICKNAME
+             , ID
+             , EMAIL
+             , PHONE_NO
+             , TO_CHAR(LEAVE_DT, 'YYYY-MM-DD') AS LEAVE_DT
+          FROM MEMBER_LEAVE
+         WHERE MEMBER_NO = #{memberNo}
+    </select>
+
+
+    <!--
+        insertSanction
+        - 회원 제재 이력 저장
+        - SANCTION_UNTIL = SYSDATE + levelDays
+    -->
+    <insert id="insertSanction" parameterType="com.doit.app.domain.SanctionVo">
+        <selectKey keyProperty="sanctionNo" resultType="Long" order="BEFORE">
+            SELECT MEMBER_SANCTION_SEQ.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO MEMBER_SANCTION
+            (SANCTION_NO, MEMBER_NO, LEVEL_DAYS, REASON, COMMENT, ADMIN_NO, SANCTION_DT, SANCTION_UNTIL)
+        VALUES
+            (#{sanctionNo}, #{memberNo}, #{levelDays}, #{reason}, #{comment}, #{adminNo},
+             SYSDATE, SYSDATE + #{levelDays})
+    </insert>
+
+</mapper>

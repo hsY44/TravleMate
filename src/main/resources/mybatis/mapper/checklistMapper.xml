@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.doit.app.mapper.ChecklistMapper">
+
+    <!--
+        selectChecklistItems : 계획 체크리스트 목록 조회
+        - 등록일 오름차순으로 반환
+    -->
+    <select id="selectChecklistItems" resultType="com.doit.app.domain.ChecklistVo">
+        SELECT CHECKLIST_NO                          AS no
+             , TRAVEL_PLAN_NO                        AS planNo
+             , CONTENT                               AS content
+             , IS_CHECKED                            AS isChecked
+             , TO_CHAR(CREATE_DT, 'YYYY-MM-DD')      AS createDt
+          FROM PLAN_CHECKLIST
+         WHERE TRAVEL_PLAN_NO = #{planNo}
+         ORDER BY CREATE_DT ASC
+    </select>
+
+    <!--
+        insertChecklistItem : 체크리스트 항목 추가
+        - PLAN_CHECKLIST_SEQ 로 PK 생성
+        - IS_CHECKED / CREATE_DT 는 DDL DEFAULT 적용
+    -->
+    <insert id="insertChecklistItem" parameterType="com.doit.app.domain.ChecklistVo">
+        <selectKey keyProperty="no" resultType="Long" order="BEFORE">
+            SELECT PLAN_CHECKLIST_SEQ.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO PLAN_CHECKLIST
+            (CHECKLIST_NO, TRAVEL_PLAN_NO, CONTENT)
+        VALUES
+            (#{no}, #{planNo}, #{content})
+    </insert>
+
+    <!--
+        updateChecklistItem : 체크리스트 항목 수정
+        - content / isChecked 중 null 이 아닌 값만 UPDATE
+        - planNo 조건으로 타 계획 항목 수정 방지
+    -->
+    <update id="updateChecklistItem">
+        UPDATE PLAN_CHECKLIST
+        <set>
+            <if test="content != null">CONTENT    = #{content},</if>
+            <if test="isChecked != null">IS_CHECKED = #{isChecked},</if>
+        </set>
+         WHERE CHECKLIST_NO   = #{no}
+           AND TRAVEL_PLAN_NO = #{planNo}
+    </update>
+
+    <!--
+        deleteChecklistItem : 체크리스트 항목 삭제
+        - planNo 조건으로 타 계획 항목 삭제 방지
+    -->
+    <delete id="deleteChecklistItem">
+        DELETE FROM PLAN_CHECKLIST
+         WHERE CHECKLIST_NO   = #{no}
+           AND TRAVEL_PLAN_NO = #{planNo}
+    </delete>
+
+</mapper>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================
+  itineraryMapper.xml 수정 참조 파일
+  Team1_history_alter.sql 적용 후 itineraryMapper.xml 에 반영
+
+  수정 대상: itineraryMapper.xml 내 insertHistory, selectHistory 2개 쿼리
+  ============================================================
+-->
+
+<!--
+  [수정 1] insertHistory
+  변경 내용: TRAVEL_PLAN_NO 컬럼 추가 (#{planNo} 파라미터는 이미 Mapper 인터페이스에 있음)
+
+  기존:
+    INSERT INTO TRAVEL_ITINERARY_HIST
+        (ITINERARY_HIST_NO, TRAVEL_ITINERARY_NO,
+         ACTION_TYPE_CD, PLAN_GUEST_NO, ITINERARY_NM)
+    VALUES
+        (TRAVEL_ITINERARY_HIST_SEQ.NEXTVAL,
+         #{itineraryNo},
+         (SELECT ACTION_TYPE_CD FROM ACTION_TYPE WHERE ACTION_TYPE_NM = #{actionTypeNm}),
+         #{planGuestNo, jdbcType=NUMERIC},
+         #{target})
+
+  변경 후:
+-->
+<insert id="insertHistory">
+    INSERT INTO TRAVEL_ITINERARY_HIST
+        (ITINERARY_HIST_NO, TRAVEL_ITINERARY_NO,
+         ACTION_TYPE_CD, PLAN_GUEST_NO, ITINERARY_NM, TRAVEL_PLAN_NO)
+    VALUES
+        (TRAVEL_ITINERARY_HIST_SEQ.NEXTVAL,
+         #{itineraryNo},
+         (SELECT ACTION_TYPE_CD FROM ACTION_TYPE WHERE ACTION_TYPE_NM = #{actionTypeNm}),
+         #{planGuestNo, jdbcType=NUMERIC},
+         #{target},
+         #{planNo})
+</insert>
+
+
+<!--
+  [수정 2] selectHistory
+  변경 내용: JOIN TRAVEL_ITINERARY 제거 → TH.TRAVEL_PLAN_NO 직접 필터
+  이유: 삭제된 일정은 TRAVEL_ITINERARY 행이 없어 INNER JOIN 시 이력이 조회 안 됨
+
+  기존:
+    FROM TRAVEL_ITINERARY_HIST TH
+    JOIN TRAVEL_ITINERARY      TI  ON TI.TRAVEL_ITINERARY_NO = TH.TRAVEL_ITINERARY_NO
+    JOIN ACTION_TYPE           AT  ON AT.ACTION_TYPE_CD      = TH.ACTION_TYPE_CD
+    JOIN PLAN_GUEST            PG  ON PG.PLAN_GUEST_NO       = TH.PLAN_GUEST_NO
+    JOIN MEMBER_ACTIVE         MA  ON MA.MEMBER_NO           = PG.MEMBER_NO
+   WHERE TI.TRAVEL_PLAN_NO = #{planNo}
+
+  변경 후:
+-->
+<select id="selectHistory" resultType="com.doit.app.domain.HistoryVo">
+    SELECT AT.ACTION_TYPE_NM                           AS type
+         , TH.ITINERARY_NM                            AS target
+         , MA.NICKNAME                                AS editor
+         , TO_CHAR(TH.EDIT_DT, 'YYYY-MM-DD HH24:MI') AS editedAt
+      FROM TRAVEL_ITINERARY_HIST TH
+      JOIN ACTION_TYPE           AT  ON AT.ACTION_TYPE_CD = TH.ACTION_TYPE_CD
+      JOIN PLAN_GUEST            PG  ON PG.PLAN_GUEST_NO  = TH.PLAN_GUEST_NO
+      JOIN MEMBER_ACTIVE         MA  ON MA.MEMBER_NO      = PG.MEMBER_NO
+     WHERE TH.TRAVEL_PLAN_NO = #{planNo}
+     ORDER BY TH.EDIT_DT DESC
+</select>
+
+
+<!--
+  ============================================================
+  [추가 코드 변경] ItineraryService.java — removeSchedule 메서드
+  itineraryMapper.xml 과 함께 적용 필요 (파일: ItineraryService.java)
+
+  기존:
+    public void removeSchedule(Long no, Long planNo, Long planGuestNo) {
+        ScheduleVo sc = itineraryMapper.selectSchedule(no, planNo);
+        if (sc == null) return;
+        itineraryMapper.deleteExpenseByItineraryNo(no);
+        itineraryMapper.deleteHistoryByItineraryNo(no);   // ← 이력 전체 삭제 (제거 대상)
+        itineraryMapper.deleteSchedule(no, planNo);
+    }
+
+  변경 후:
+    public void removeSchedule(Long no, Long planNo, Long planGuestNo) {
+        ScheduleVo sc = itineraryMapper.selectSchedule(no, planNo);
+        if (sc == null) return;
+        itineraryMapper.insertHistory(planNo, no, "삭제", planGuestNo, sc.getTitle()); // ← 삭제 이력 먼저 기록
+        itineraryMapper.deleteExpenseByItineraryNo(no);
+        itineraryMapper.deleteSchedule(no, planNo);       // ← deleteHistoryByItineraryNo 제거
+    }
+  ============================================================
+-->

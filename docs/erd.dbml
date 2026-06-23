@@ -1,0 +1,309 @@
+// TravleMate Database Schema
+// dbdiagram.io 에서 붙여넣기 후 ERD 생성
+// https://dbdiagram.io
+
+// =============================================
+// 관리자
+// =============================================
+
+Table ADMIN_ACCOUNT {
+  ADMIN_NO     int         [pk, not null,  note: '관리자 고유번호']
+  ID           varchar(50) [not null, unique, note: '관리자 아이디']
+  PW           varchar(500)[not null,       note: '비밀번호 (AES256 암호화)']
+}
+
+// =============================================
+// 회원
+// =============================================
+
+Table MEMBER_MASTER {
+  MEMBER_NO  int  [pk, not null,              note: '회원 고유번호']
+  CREATE_DT  date [not null, default: `now()`, note: '가입일시']
+}
+
+Table MEMBER_ACTIVE {
+  MEMBER_NO  int          [pk, not null,       note: '회원 고유번호 (MEMBER_MASTER 공유)']
+  NAME       varchar(100) [not null,           note: '이름']
+  NICKNAME   varchar(100) [not null, unique,   note: '닉네임']
+  ID         varchar(50)  [not null, unique,   note: '로그인 아이디']
+  PW         varchar(500) [not null,           note: '비밀번호 (AES256 암호화)']
+  EMAIL      varchar(200) [                    note: '이메일']
+  PHONE_NO   varchar(20)  [                    note: '휴대폰번호']
+}
+
+Table MEMBER_LEAVE {
+  MEMBER_NO  int          [pk, not null,       note: '탈퇴 회원 고유번호']
+  NAME       varchar(100) [                    note: '이름']
+  NICKNAME   varchar(100) [                    note: '닉네임']
+  ID         varchar(50)  [                    note: '로그인 아이디']
+  PW         varchar(500) [                    note: '비밀번호 (암호화)']
+  EMAIL      varchar(200) [                    note: '이메일']
+  PHONE_NO   varchar(20)  [                    note: '휴대폰번호']
+  LEAVE_DT   date         [default: `now()`,   note: '탈퇴일시']
+}
+
+Table MEMBER_SANCTION {
+  SANCTION_NO    int          [pk, not null,       note: '제재 고유번호']
+  MEMBER_NO      int          [not null,           note: '제재 대상 회원번호']
+  LEVEL_DAYS     int          [not null,           note: '제재 일수 (1/3/7)']
+  REASON         varchar(100) [                    note: '제재 사유']
+  SANCTION_CMT   varchar(500) [                    note: '제재 상세 메모']
+  ADMIN_NO       int          [                    note: '처리 관리자번호']
+  SANCTION_DT    date         [not null, default: `now()`, note: '제재 시작일시']
+  SANCTION_UNTIL date         [                    note: '제재 해제일시']
+}
+
+// =============================================
+// 컨텐츠
+// =============================================
+
+Table CONTENTCATEGORY {
+  CONTENTTYPEID varchar(20)  [pk, not null,  note: '카테고리 코드 (API 기준)']
+  CONTENTDIV    varchar(100) [               note: '카테고리명 (관광지/숙박/음식점 등)']
+}
+
+Table CONTENT {
+  CONTENTID     int           [pk, not null, note: '컨텐츠 고유번호']
+  TITLE         varchar(500)  [              note: '컨텐츠명']
+  ADDR1         varchar(1000) [              note: '주소']
+  ADDR2         varchar(1000) [              note: '상세주소']
+  CONTENTTYPEID varchar(20)   [              note: '카테고리 코드']
+  FIRSTIMAGE    varchar(1000) [              note: '대표이미지1 URL']
+  FIRSTIMAGE2   varchar(1000) [              note: '대표이미지2 URL']
+  CREATEDTIME   varchar(14)   [              note: 'API 생성일자 (yyyyMMddHHmmss)']
+  MODIFIEDTIME  varchar(14)   [              note: 'API 수정일자 (yyyyMMddHHmmss)']
+  MAPX          float         [              note: '경도']
+  MAPY          float         [              note: '위도']
+  APIID         varchar(1000) [unique,       note: 'API 원본 CONTENTID']
+}
+
+Table CONTENTEVENT {
+  CONTENTID      int         [pk, not null,  note: '컨텐츠 고유번호']
+  EVENTSTARTDATE varchar(20) [               note: '행사 시작일']
+  EVENTENDDATE   varchar(20) [               note: '행사 종료일']
+}
+
+Table IMAGE {
+  CONTENTIMAGEID int           [pk, not null, note: '이미지 고유번호']
+  CONTENTID      int           [              note: '컨텐츠 고유번호']
+  IMAGE_URL      varchar(1000) [              note: '이미지 URL']
+}
+
+Table CONTENTIMAGE {
+  CONTENTIMAGEID int           [pk, not null, note: '이미지 고유번호']
+  APIID          varchar(1000) [              note: 'API 원본 CONTENTID']
+  ORIGINIMGURL   varchar(1000) [              note: '원본 이미지 URL']
+  IMGNAME        varchar(500)  [              note: '이미지명']
+}
+
+Table CONTENT_REVIEW {
+  CONTENT_REVIEW_NO int           [pk, not null,      note: '리뷰 고유번호']
+  MEMBER_NO         int           [not null,           note: '작성 회원번호']
+  CONTENTID         int           [not null,           note: '컨텐츠 고유번호']
+  REVIEW_COMMENT    varchar(2000) [                    note: '리뷰 내용']
+  RATING            int           [                    note: '별점 (1~5)']
+  CREATE_DT         date          [default: `now()`,   note: '작성일시']
+}
+
+Table REVIEW_REPORT_TYPE {
+  REPORT_TYPE_CD int          [pk, not null, note: '신고 타입 코드']
+  REPORT_TYPE_NM varchar(100) [not null,     note: '신고 타입명 (욕설/스팸/허위정보/기타)']
+}
+
+Table REVIEW_REPORT {
+  REVIEW_REPORT_NO   int          [pk, not null,       note: '신고 고유번호']
+  REPORTER_MEMBER_NO int          [not null,           note: '신고자 회원번호']
+  CONTENT_REVIEW_NO  int          [not null,           note: '신고 대상 리뷰번호']
+  REPORT_TYPE_CD     int          [                    note: '신고 타입 코드']
+  REPORT_COMMENT     varchar(500) [                    note: '신고 내용']
+  REPORT_DT          date         [default: `now()`,   note: '신고 일시']
+  PROCESS_YN         varchar(1)   [default: 'N',       note: '처리 여부 (Y/N)']
+}
+
+Table MEMBER_BOOKMARK {
+  BOOKMARK_NO int  [pk, not null,      note: '즐겨찾기 고유번호']
+  MEMBER_NO   int  [not null,          note: '회원 고유번호']
+  CONTENTID   int  [not null,          note: '컨텐츠 고유번호']
+  CREATE_DT   date [default: `now()`,  note: '즐겨찾기 등록일시']
+
+  indexes {
+    (MEMBER_NO, CONTENTID) [unique]
+  }
+}
+
+// =============================================
+// 게시판
+// =============================================
+
+Table NOTICE {
+  NOTICE_NO      int           [pk, not null,      note: '공지사항 고유번호']
+  ADMIN_NO       int           [                   note: '작성 관리자번호']
+  NOTICE_TITLE   varchar(200)  [not null,          note: '공지 제목']
+  NOTICE_CONTENT varchar(4000) [                   note: '공지 내용']
+  VIEW_CNT       int           [default: 0,        note: '조회수']
+  CREATE_DT      date          [default: `now()`,  note: '작성일시']
+}
+
+Table FAQ_TYPE {
+  FAQ_TYPE_CD varchar(20)  [pk, not null, note: '카테고리 코드']
+  FAQ_TYPE_NM varchar(100) [not null,     note: '카테고리명']
+}
+
+Table FAQ {
+  FAQ_NO       int           [pk, not null,       note: 'FAQ 고유번호']
+  FAQ_TYPE_CD  varchar(20)   [not null,           note: '카테고리 코드']
+  ADMIN_NO     int           [                    note: '작성 관리자번호']
+  FAQ_QUESTION varchar(500)  [not null,           note: '질문 내용']
+  FAQ_ANSWER   varchar(4000) [                    note: '답변 내용']
+  CREATE_DT    date          [default: `now()`,   note: '작성일시']
+}
+
+Table QNA_TYPE {
+  QNA_TYPE_CD varchar(20)  [pk, not null, note: '카테고리 코드']
+  QNA_TYPE_NM varchar(100) [not null,     note: '카테고리명']
+}
+
+Table QNA_QUESTION {
+  QNA_REQ_NO  int           [pk, not null,            note: '문의 고유번호']
+  MEMBER_NO   int           [not null,                note: '문의 회원번호']
+  QNA_TYPE_CD varchar(20)   [not null,                note: '카테고리 코드']
+  QNA_TITLE   varchar(200)  [not null,                note: '문의 제목']
+  QNA_CONTENT varchar(4000) [                         note: '문의 내용']
+  STATUS_CD   varchar(10)   [not null, default: 'ST001', note: '처리상태 (ST001:접수대기 ST002:답변완료)']
+  CREATE_DT   date          [default: `now()`,        note: '문의 등록일시']
+}
+
+Table QNA_ANSWER {
+  QNA_ANS_NO  int           [pk, not null, note: '답변 고유번호']
+  QNA_REQ_NO  int           [not null, unique, note: '문의 고유번호 (1:1 관계)']
+  ADMIN_NO    int           [               note: '답변 관리자번호']
+  ANS_CONTENT varchar(4000) [               note: '답변 내용']
+}
+
+// =============================================
+// 여행 계획
+// =============================================
+
+Table TRAVEL_THEME {
+  TRAVEL_THEME_CD varchar(20)  [pk, not null, note: '테마 코드']
+  TRAVEL_THEME_NM varchar(100) [not null,     note: '테마명 (힐링/액티비티 등)']
+}
+
+Table TRAVEL_PLAN {
+  TRAVEL_PLAN_NO      int           [pk, not null,       note: '여행계획 고유번호']
+  HOST_MEMBER_NO      int           [not null,           note: '호스트 회원번호']
+  TRAVEL_NAME         varchar(200)  [not null,           note: '여행계획 이름']
+  TRAVEL_THEME_CD     varchar(20)   [                    note: '여행 테마 코드']
+  TRAVEL_START_DT     date          [                    note: '여행 시작일']
+  TRAVEL_END_DT       date          [                    note: '여행 종료일']
+  OUTLINE             varchar(1000) [                    note: '여행 개요']
+  ROOT_TRAVEL_PLAN_NO int           [                    note: '루트 계획 번호 (버전 분기용)']
+  REVISION_DT         date          [default: `now()`,   note: '최근 수정일시']
+}
+
+Table ACTION_TYPE {
+  ACTION_TYPE_CD varchar(20)  [pk, not null, note: '액션 코드 (Act001/Act002/Act003)']
+  ACTION_TYPE_NM varchar(100) [not null,     note: '액션명 (생성/수정/삭제)']
+}
+
+Table PLAN_GUEST {
+  PLAN_GUEST_NO  int  [pk, not null,       note: '게스트 고유번호']
+  TRAVEL_PLAN_NO int  [not null,           note: '여행계획 고유번호']
+  MEMBER_NO      int  [not null,           note: '참여 회원번호']
+  CREATE_DT      date [default: `now()`,   note: '참여일시']
+}
+
+Table TRAVEL_ITINERARY {
+  TRAVEL_ITINERARY_NO int          [pk, not null, note: '일정 고유번호']
+  TRAVEL_PLAN_NO      int          [not null,     note: '여행계획 고유번호']
+  ITINERARY_DT        date         [not null,     note: '일정 날짜']
+  ITINERARY_TIME      varchar(5)   [              note: '일정 시간 (HH:MI 형식)']
+  ITINERARY_NM        varchar(200) [not null,     note: '일정 제목']
+  ITINERARY_MEMO      varchar(1000)[              note: '일정 메모']
+  CONTENT_NO          int          [              note: '연결 관광지 번호 (NULL 허용)']
+}
+
+Table ITINERARY_EXPENSE_TYPE {
+  EXPENSE_TYPE_CD varchar(20)  [pk, not null, note: '비용 카테고리 코드']
+  EXPENSE_TYPE_NM varchar(100) [not null,     note: '비용 카테고리명 (숙박/교통/식비/관광체험/쇼핑/기타)']
+}
+
+Table ITINERARY_EXPENSE {
+  ITINERARY_EXPENSE_NO   int         [pk, not null, note: '비용 고유번호']
+  TRAVEL_ITINERARY_NO    int         [not null,     note: '일정 고유번호']
+  EXPENSE_AMT            int         [not null,     note: '비용 금액 (원)']
+  ITINERARY_EXPENSE_TYPE varchar(20) [              note: '비용 카테고리 코드']
+}
+
+Table TRAVEL_ITINERARY_HIST {
+  ITINERARY_HIST_NO   int          [pk, not null,       note: '이력 고유번호']
+  TRAVEL_ITINERARY_NO int          [not null,           note: '일정 고유번호']
+  ACTION_TYPE_CD      varchar(20)  [                    note: '액션 코드 (생성/수정/삭제)']
+  PLAN_GUEST_NO       int          [                    note: '편집한 게스트번호 (NULL 허용)']
+  ITINERARY_NM        varchar(200) [                    note: '편집 당시 일정 제목 스냅샷']
+  EDIT_DT             date         [default: `now()`,   note: '편집일시']
+}
+
+Table TRAVEL_INVITATION {
+  TRAVEL_INVITATION_NO int          [pk, not null,       note: '초대코드 고유번호']
+  INVITE_CODE          varchar(100) [not null, unique,   note: 'UUID 기반 초대 코드 (16자리)']
+  TRAVEL_PLAN_NO       int          [not null,           note: '여행계획 고유번호']
+  CREATE_DT            date         [default: `now()`,   note: '초대코드 생성일시']
+}
+
+Table PLAN_GUEST_LEAVE {
+  PLAN_GUEST_NO int        [pk, not null,      note: '게스트 고유번호']
+  LEAVE_DATE    date       [default: `now()`,  note: '탈퇴/내보내기 일시']
+  LEAVE_TYPE    varchar(20)[                   note: '탈퇴 유형 (leave: 자발적 / kick: 강제)']
+}
+
+Table PLAN_CHECKLIST {
+  CHECKLIST_NO   int          [pk, not null,        note: '체크리스트 고유번호']
+  TRAVEL_PLAN_NO int          [not null,            note: '여행계획 고유번호']
+  ITEM_CONTENT   varchar(200) [not null,            note: '항목 내용']
+  IS_CHECKED     int          [not null, default: 0, note: '체크 여부 (0: 미체크 / 1: 체크)']
+  CREATE_DT      date         [not null, default: `now()`, note: '등록일시']
+}
+
+// =============================================
+// References
+// =============================================
+
+// 회원
+Ref: MEMBER_ACTIVE.MEMBER_NO - MEMBER_MASTER.MEMBER_NO
+
+// 컨텐츠
+Ref: CONTENT.CONTENTTYPEID > CONTENTCATEGORY.CONTENTTYPEID
+Ref: CONTENTEVENT.CONTENTID - CONTENT.CONTENTID
+Ref: IMAGE.CONTENTID > CONTENT.CONTENTID
+Ref: CONTENT_REVIEW.MEMBER_NO > MEMBER_MASTER.MEMBER_NO
+Ref: CONTENT_REVIEW.CONTENTID > CONTENT.CONTENTID
+Ref: REVIEW_REPORT.CONTENT_REVIEW_NO > CONTENT_REVIEW.CONTENT_REVIEW_NO
+Ref: REVIEW_REPORT.REPORT_TYPE_CD > REVIEW_REPORT_TYPE.REPORT_TYPE_CD
+Ref: MEMBER_BOOKMARK.MEMBER_NO > MEMBER_MASTER.MEMBER_NO
+Ref: MEMBER_BOOKMARK.CONTENTID > CONTENT.CONTENTID
+
+// 게시판
+Ref: NOTICE.ADMIN_NO > ADMIN_ACCOUNT.ADMIN_NO
+Ref: FAQ.FAQ_TYPE_CD > FAQ_TYPE.FAQ_TYPE_CD
+Ref: FAQ.ADMIN_NO > ADMIN_ACCOUNT.ADMIN_NO
+Ref: QNA_QUESTION.MEMBER_NO > MEMBER_MASTER.MEMBER_NO
+Ref: QNA_QUESTION.QNA_TYPE_CD > QNA_TYPE.QNA_TYPE_CD
+Ref: QNA_ANSWER.QNA_REQ_NO - QNA_QUESTION.QNA_REQ_NO
+Ref: QNA_ANSWER.ADMIN_NO > ADMIN_ACCOUNT.ADMIN_NO
+
+// 여행 계획
+Ref: TRAVEL_PLAN.HOST_MEMBER_NO > MEMBER_MASTER.MEMBER_NO
+Ref: TRAVEL_PLAN.TRAVEL_THEME_CD > TRAVEL_THEME.TRAVEL_THEME_CD
+Ref: PLAN_GUEST.TRAVEL_PLAN_NO > TRAVEL_PLAN.TRAVEL_PLAN_NO
+Ref: PLAN_GUEST.MEMBER_NO > MEMBER_MASTER.MEMBER_NO
+Ref: TRAVEL_ITINERARY.TRAVEL_PLAN_NO > TRAVEL_PLAN.TRAVEL_PLAN_NO
+Ref: TRAVEL_ITINERARY.CONTENT_NO > CONTENT.CONTENTID
+Ref: ITINERARY_EXPENSE.TRAVEL_ITINERARY_NO > TRAVEL_ITINERARY.TRAVEL_ITINERARY_NO
+Ref: ITINERARY_EXPENSE.ITINERARY_EXPENSE_TYPE > ITINERARY_EXPENSE_TYPE.EXPENSE_TYPE_CD
+Ref: TRAVEL_ITINERARY_HIST.TRAVEL_ITINERARY_NO > TRAVEL_ITINERARY.TRAVEL_ITINERARY_NO
+Ref: TRAVEL_ITINERARY_HIST.ACTION_TYPE_CD > ACTION_TYPE.ACTION_TYPE_CD
+Ref: TRAVEL_ITINERARY_HIST.PLAN_GUEST_NO > PLAN_GUEST.PLAN_GUEST_NO
+Ref: TRAVEL_INVITATION.TRAVEL_PLAN_NO > TRAVEL_PLAN.TRAVEL_PLAN_NO
+Ref: PLAN_GUEST_LEAVE.PLAN_GUEST_NO - PLAN_GUEST.PLAN_GUEST_NO
+Ref: PLAN_CHECKLIST.TRAVEL_PLAN_NO > TRAVEL_PLAN.TRAVEL_PLAN_NO

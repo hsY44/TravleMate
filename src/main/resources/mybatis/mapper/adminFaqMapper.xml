@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    adminFaqMapper.xml
+    - 관리자 FAQ 관련 SQL
+    - namespace : com.doit.app.mapper.AdminFaqMapper
+-->
+<mapper namespace="com.doit.app.mapper.AdminFaqMapper">
+
+    <!--
+        selectFaqTypes
+        - FAQ 카테고리 전체 조회 — 이름순
+    -->
+    <select id="selectFaqTypes" resultType="com.doit.app.domain.FaqTypeVo">
+        SELECT FAQ_TYPE_CD  AS faqTypeCd
+             , FAQ_TYPE_NM  AS faqTypeNm
+          FROM FAQ_TYPE
+         ORDER BY FAQ_TYPE_NM
+    </select>
+
+
+    <!--
+        insertFaqType
+        - FAQ 카테고리 등록
+    -->
+    <insert id="insertFaqType" parameterType="com.doit.app.domain.FaqTypeVo">
+        INSERT INTO FAQ_TYPE (FAQ_TYPE_CD, FAQ_TYPE_NM)
+        VALUES (#{faqTypeCd}, #{faqTypeNm})
+    </insert>
+
+
+    <!--
+        updateFaqType
+        - FAQ 카테고리 이름 수정
+    -->
+    <update id="updateFaqType" parameterType="com.doit.app.domain.FaqTypeVo">
+        UPDATE FAQ_TYPE
+           SET FAQ_TYPE_NM = #{faqTypeNm}
+         WHERE FAQ_TYPE_CD = #{faqTypeCd}
+    </update>
+
+
+    <!--
+        selectAllFaqs
+        - FAQ 전체 목록 (관리자용) — FAQ_TYPE JOIN, 등록일 역순
+    -->
+    <select id="selectAllFaqs" resultType="com.doit.app.domain.FaqVo">
+        SELECT F.FAQ_NO                                AS faqNo
+             , F.FAQ_TYPE_CD                           AS faqTypeCd
+             , FT.FAQ_TYPE_NM                          AS faqTypeNm
+             , F.FAQ_QUESTION                          AS faqQuestion
+             , F.FAQ_ANSWER                            AS faqAnswer
+             , TO_CHAR(F.CREATE_DT, 'YYYY-MM-DD')     AS createDt
+          FROM FAQ F
+          JOIN FAQ_TYPE FT ON FT.FAQ_TYPE_CD = F.FAQ_TYPE_CD
+         ORDER BY F.CREATE_DT DESC
+    </select>
+
+
+    <!--
+        selectFaqByNo
+        - FAQ 단건 조회
+    -->
+    <select id="selectFaqByNo" resultType="com.doit.app.domain.FaqVo">
+        SELECT F.FAQ_NO                                AS faqNo
+             , F.FAQ_TYPE_CD                           AS faqTypeCd
+             , FT.FAQ_TYPE_NM                          AS faqTypeNm
+             , F.FAQ_QUESTION                          AS faqQuestion
+             , F.FAQ_ANSWER                            AS faqAnswer
+             , TO_CHAR(F.CREATE_DT, 'YYYY-MM-DD')     AS createDt
+          FROM FAQ F
+          JOIN FAQ_TYPE FT ON FT.FAQ_TYPE_CD = F.FAQ_TYPE_CD
+         WHERE F.FAQ_NO = #{faqNo}
+    </select>
+
+
+    <!--
+        insertFaq
+        - FAQ 등록 (FAQ_SEQ 사용)
+    -->
+    <insert id="insertFaq">
+        INSERT INTO FAQ (FAQ_NO, FAQ_TYPE_CD, ADMIN_NO, FAQ_QUESTION, FAQ_ANSWER)
+        VALUES (FAQ_SEQ.NEXTVAL, #{faqTypeCd}, #{adminNo}, #{faqQuestion}, #{faqAnswer})
+    </insert>
+
+
+    <!--
+        updateFaq
+        - FAQ 수정 (카테고리, 질문, 답변)
+    -->
+    <update id="updateFaq">
+        UPDATE FAQ
+           SET FAQ_TYPE_CD  = #{faqTypeCd}
+             , FAQ_QUESTION = #{faqQuestion}
+             , FAQ_ANSWER   = #{faqAnswer}
+         WHERE FAQ_NO = #{faqNo}
+    </update>
+
+
+    <!--
+        deleteFaq
+        - FAQ 삭제
+    -->
+    <delete id="deleteFaq">
+        DELETE FROM FAQ WHERE FAQ_NO = #{faqNo}
+    </delete>
+
+</mapper>

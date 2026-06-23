@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    travelMapper.xml
+    - 여행 계획 관련 SQL
+    - namespace : com.doit.app.mapper.TravelMapper
+-->
+<mapper namespace="com.doit.app.mapper.TravelMapper">
+
+    <!--
+        selectPlansByMemberNo
+        - 특정 회원이 호스트인 여행계획 목록 조회
+        - ROOT_TRAVEL_PLAN_NO IS NULL     : 최초 생성된 루트 계획 (버전 분기 전)
+        - ROOT_TRAVEL_PLAN_NO = PLAN_NO   : 자기 자신을 루트로 참조하는 계획
+          두 조건을 OR 로 묶어 루트 계획 모두 수용
+        - TRAVEL_THEME JOIN 으로 테마명 포함
+        - 최신 개정순 정렬
+    -->
+    <select id="selectPlansByMemberNo" resultType="com.doit.app.domain.TravelVo">
+        SELECT TP.TRAVEL_PLAN_NO                               AS travelPlanNo
+             , TP.TRAVEL_NAME                                  AS travelName
+             , TO_CHAR(TP.TRAVEL_START_DT, 'YYYY-MM-DD')      AS travelStartDt
+             , TO_CHAR(TP.TRAVEL_END_DT,   'YYYY-MM-DD')      AS travelEndDt
+             , TT.TRAVEL_THEME_NM                             AS travelThemeNm
+             , TP.OUTLINE                                      AS outline
+          FROM TRAVEL_PLAN TP
+          LEFT JOIN TRAVEL_THEME TT ON TT.TRAVEL_THEME_CD = TP.TRAVEL_THEME_CD
+         WHERE TP.HOST_MEMBER_NO = #{memberNo}
+           AND (TP.ROOT_TRAVEL_PLAN_NO IS NULL
+                OR TP.ROOT_TRAVEL_PLAN_NO = TP.TRAVEL_PLAN_NO)
+         ORDER BY TP.REVISION_DT DESC
+    </select>
+
+
+    <!--
+        공통 컬럼 블록 (PlanVo 매핑)
+        - selectPlanDetail / selectMyPlans / selectJoinedPlans 에서 재사용
+        - inviteCode : TRAVEL_INVITATION.INVITE_CODE
+        - dayCount   : Oracle 날짜 뺄셈 → NUMBER (당일 포함이므로 +1)
+        - guestCount : 스칼라 서브쿼리
+    -->
+    <sql id="planVoCols">
+        TP.TRAVEL_PLAN_NO                                                        AS id
+      , TP.HOST_MEMBER_NO                                                        AS hostMemberNo
+      , TP.TRAVEL_NAME                                                           AS title
+      , TT.TRAVEL_THEME_NM                                                       AS theme
+      , TO_CHAR(TP.TRAVEL_START_DT, 'YYYY-MM-DD')                               AS startDate
+      , TO_CHAR(TP.TRAVEL_END_DT,   'YYYY-MM-DD')                               AS endDate
+      , TP.OUTLINE                                                               AS overview
+      , (TP.TRAVEL_END_DT - TP.TRAVEL_START_DT + 1)                             AS dayCount
+      , (SELECT COUNT(*) FROM PLAN_GUEST PG
+          WHERE PG.TRAVEL_PLAN_NO = TP.TRAVEL_PLAN_NO)                           AS guestCount
+      , TO_CHAR(TP.REVISION_DT, 'YYYY-MM-DD')                                   AS lastEditedAt
+      , (SELECT INVITE_CODE
+           FROM (SELECT INVITE_CODE
+                   FROM TRAVEL_INVITATION
+                  WHERE TRAVEL_PLAN_NO      = TP.TRAVEL_PLAN_NO
+                    AND INVITE_CODE IS NOT NULL
+                  ORDER BY CREATE_DT DESC)
+          WHERE ROWNUM = 1)                                                    AS inviteCode
+      , NVL(TP.IS_PUBLIC, 0)                                                   AS isPublic
+    </sql>
+
+
+    <!-- selectPlanDetail : 계획 단건 조회 -->
+    <select id="selectPlanDetail" resultType="com.doit.app.domain.PlanVo">
+        SELECT <include refid="planVoCols"/>
+          FROM TRAVEL_PLAN TP
+          LEFT JOIN TRAVEL_THEME TT ON TT.TRAVEL_THEME_CD = TP.TRAVEL_THEME_CD
+         WHERE TP.TRAVEL_PLAN_NO = #{planNo}
+    </select>
+
+
+    <!-- selectMyPlans : 호스트인 계획 목록 (테마/날짜 필터 선택 적용) -->
+    <select id="selectMyPlans" resultType="com.doit.app.domain.PlanVo">
+        SELECT <include refid="planVoCols"/>
+          FROM TRAVEL_PLAN TP
+          LEFT JOIN TRAVEL_THEME TT ON TT.TRAVEL_THEME_CD = TP.TRAVEL_THEME_CD
+         WHERE TP.HOST_MEMBER_NO = #{memberNo}
+           AND (TP.ROOT_TRAVEL_PLAN_NO IS NULL
+                OR TP.ROOT_TRAVEL_PLAN_NO = TP.TRAVEL_PLAN_NO)
+        <if test="theme != null and theme != ''">
+           AND TT.TRAVEL_THEME_NM = #{theme}
+        </if>
+        <if test="startDate != null and startDate != ''">
+           AND TP.TRAVEL_START_DT &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+           AND TP.TRAVEL_END_DT &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+         ORDER BY TP.REVISION_DT DESC
+    </select>
+
+
+    <!-- selectJoinedPlans : 게스트로 참여 중인 계획 목록 (테마/날짜 필터 선택 적용) -->
+    <select id="selectJoinedPlans" resultType="com.doit.app.domain.PlanVo">
+        SELECT <include refid="planVoCols"/>
+          FROM TRAVEL_PLAN TP
+          JOIN PLAN_GUEST        PG ON PG.TRAVEL_PLAN_NO  = TP.TRAVEL_PLAN_NO
+          LEFT JOIN TRAVEL_THEME TT ON TT.TRAVEL_THEME_CD = TP.TRAVEL_THEME_CD
+         WHERE PG.MEMBER_NO        = #{memberNo}
+           AND TP.HOST_MEMBER_NO  != #{memberNo}
+           AND NOT EXISTS (
+               SELECT 1 FROM PLAN_GUEST_LEAVE PGL
+                WHERE PGL.PLAN_GUEST_NO = PG.PLAN_GUEST_NO
+           )
+        <if test="theme != null and theme != ''">
+           AND TT.TRAVEL_THEME_NM = #{theme}
+        </if>
+        <if test="startDate != null and startDate != ''">
+           AND TP.TRAVEL_START_DT &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+           AND TP.TRAVEL_END_DT &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+         ORDER BY TP.REVISION_DT DESC
+    </select>
+
+
+    <!-- selectThemeNames : 테마명 목록 (필터 드롭다운) -->
+    <select id="selectThemeNames" resultType="String">
+        SELECT TRAVEL_THEME_NM
+          FROM TRAVEL_THEME
+         ORDER BY TRAVEL_THEME_CD ASC
+    </select>
+
+
+    <!-- countHostPlans : 호스트로 보유 중인 계획 수 (20개 제한용) -->
+    <select id="countHostPlans" resultType="int">
+        SELECT COUNT(1)
+          FROM TRAVEL_PLAN
+         WHERE HOST_MEMBER_NO = #{memberNo}
+    </select>
+
+
+    <!--
+        checkDateOverlap : 날짜 겹침 검사
+        - 회원이 현재 참여 중인 계획(탈퇴 이력 없는 PLAN_GUEST) 중
+          신규/수정 날짜 범위와 겹치는 계획이 있으면 COUNT > 0
+        - 날짜 겹침 조건 : 기존.시작 <= 신규.종료  AND  기존.종료 >= 신규.시작
+        - excludePlanNo  : 수정 시 자기 자신 제외 / 생성 시 null 전달
+    -->
+    <select id="checkDateOverlap" resultType="int">
+        SELECT COUNT(1)
+          FROM PLAN_GUEST  PG
+          JOIN TRAVEL_PLAN TP ON TP.TRAVEL_PLAN_NO = PG.TRAVEL_PLAN_NO
+         WHERE PG.MEMBER_NO = #{memberNo}
+           AND NOT EXISTS (
+               SELECT 1 FROM PLAN_GUEST_LEAVE L
+                WHERE L.PLAN_GUEST_NO = PG.PLAN_GUEST_NO
+           )
+           AND TP.TRAVEL_START_DT &lt;= TO_DATE(#{endDt},   'YYYY-MM-DD')
+           AND TP.TRAVEL_END_DT   &gt;= TO_DATE(#{startDt}, 'YYYY-MM-DD')
+        <if test="excludePlanNo != null">
+           AND TP.TRAVEL_PLAN_NO  != #{excludePlanNo}
+        </if>
+    </select>
+
+
+    <!--
+        insertPlan : 새 여행 계획 생성
+        - TRAVEL_PLAN_SEQ.NEXTVAL → planVo.id 저장
+        - TRAVEL_THEME_CD : 테마명 → 코드 서브쿼리
+        - ROOT_TRAVEL_PLAN_NO = 새 PK (자기 자신을 루트로)
+    -->
+    <insert id="insertPlan" parameterType="com.doit.app.domain.PlanVo">
+        <selectKey keyProperty="id" resultType="Long" order="BEFORE">
+            SELECT TRAVEL_PLAN_SEQ.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO TRAVEL_PLAN
+            (TRAVEL_PLAN_NO, HOST_MEMBER_NO, TRAVEL_NAME,
+             TRAVEL_THEME_CD, TRAVEL_START_DT, TRAVEL_END_DT,
+             OUTLINE, ROOT_TRAVEL_PLAN_NO, REVISION_DT)
+        VALUES
+            (#{id}, #{hostMemberNo}, #{title},
+             (SELECT TRAVEL_THEME_CD FROM TRAVEL_THEME WHERE TRAVEL_THEME_NM = #{theme}),
+             TO_DATE(#{startDate}, 'YYYY-MM-DD'), TO_DATE(#{endDate}, 'YYYY-MM-DD'),
+             #{overview}, #{id}, SYSDATE)
+    </insert>
+
+
+    <!-- insertPlanGuest : 호스트를 PLAN_GUEST 에 등록 -->
+    <insert id="insertPlanGuest">
+        INSERT INTO PLAN_GUEST (PLAN_GUEST_NO, TRAVEL_PLAN_NO, MEMBER_NO)
+        VALUES (PLAN_GUEST_SEQ.NEXTVAL, #{planNo}, #{memberNo})
+    </insert>
+
+
+    <!-- insertInvitation : UUID 초대코드를 TRAVEL_INVITATION 에 저장 -->
+    <insert id="insertInvitation">
+        INSERT INTO TRAVEL_INVITATION (TRAVEL_INVITATION_NO, INVITE_CODE, TRAVEL_PLAN_NO)
+        VALUES (TRAVEL_INVITATION_SEQ.NEXTVAL, #{inviteCode}, #{planNo})
+    </insert>
+
+
+    <!-- ══ 직접 초대 (TRAVEL_INVITATION — INVITEE_MEMBER_NO 기반) ══ -->
+
+    <!--
+        insertTargetedInvitation
+        - 특정 회원에게 직접 초대 전송 (INVITE_CODE = NULL, INVITE_STATUS = 'PENDING')
+        - sendInvitation 서비스에서 countDuplicateInvitation > 0 이면 호출 안 됨
+    -->
+    <insert id="insertTargetedInvitation">
+        INSERT INTO TRAVEL_INVITATION
+            (TRAVEL_INVITATION_NO, TRAVEL_PLAN_NO, INVITEE_MEMBER_NO, INVITE_STATUS)
+        VALUES
+            (TRAVEL_INVITATION_SEQ.NEXTVAL, #{planNo}, #{inviteeMemberNo}, 'PENDING')
+    </insert>
+
+
+    <!--
+        countDuplicateInvitation
+        - 동일 플랜에 동일 회원 PENDING 초대가 이미 있는지 확인
+        - 중복 초대 방지용 — insertTargetedInvitation 호출 전에 체크
+    -->
+    <select id="countDuplicateInvitation" resultType="int">
+        SELECT COUNT(1)
+          FROM TRAVEL_INVITATION
+         WHERE TRAVEL_PLAN_NO    = #{planNo}
+           AND INVITEE_MEMBER_NO = #{inviteeMemberNo}
+           AND INVITE_STATUS     = 'PENDING'
+    </select>
+
+
+    <!--
+        selectReceivedInvitations
+        - 로그인 회원에게 PENDING 상태인 직접 초대 목록 조회
+        - TRAVEL_PLAN, MEMBER_ACTIVE(호스트) JOIN
+        - 최신 초대순 정렬
+    -->
+    <select id="selectReceivedInvitations" resultType="com.doit.app.domain.InvitationVo">
+        SELECT TI.TRAVEL_INVITATION_NO              AS invitationNo
+             , TP.TRAVEL_PLAN_NO                    AS planNo
+             , TP.TRAVEL_NAME                       AS planTitle
+             , MA.NICKNAME                          AS hostNickname
+             , TI.INVITE_STATUS                     AS inviteStatus
+             , TO_CHAR(TI.CREATE_DT, 'YYYY-MM-DD') AS createDt
+          FROM TRAVEL_INVITATION TI
+          JOIN TRAVEL_PLAN   TP ON TP.TRAVEL_PLAN_NO = TI.TRAVEL_PLAN_NO
+          JOIN MEMBER_ACTIVE MA ON MA.MEMBER_NO       = TP.HOST_MEMBER_NO
+         WHERE TI.INVITEE_MEMBER_NO = #{memberNo}
+           AND TI.INVITE_STATUS     = 'PENDING'
+         ORDER BY TI.CREATE_DT DESC
+    </select>
+
+
+    <!--
+        selectInvitationByNo
+        - 초대 단건 조회 (수락·거절 처리 전 소유권·상태 확인용)
+    -->
+    <select id="selectInvitationByNo" resultType="com.doit.app.domain.InvitationVo">
+        SELECT TRAVEL_INVITATION_NO AS invitationNo
+             , TRAVEL_PLAN_NO       AS planNo
+             , INVITEE_MEMBER_NO    AS inviteeMemberNo
+             , INVITE_STATUS        AS inviteStatus
+          FROM TRAVEL_INVITATION
+         WHERE TRAVEL_INVITATION_NO = #{invitationNo}
+    </select>
+
+
+    <!--
+        updateInviteStatus
+        - 초대 상태 변경 (PENDING → ACCEPTED / DECLINED)
+        - INVITEE_MEMBER_NO = #{memberNo} : 본인 초대만 처리 가능
+        - INVITE_STATUS = 'PENDING'       : 이미 처리된 초대는 변경 불가
+    -->
+    <update id="updateInviteStatus">
+        UPDATE TRAVEL_INVITATION
+           SET INVITE_STATUS = #{status}
+         WHERE TRAVEL_INVITATION_NO = #{invitationNo}
+           AND INVITEE_MEMBER_NO    = #{memberNo}
+           AND INVITE_STATUS        = 'PENDING'
+    </update>
+
+
+    <!-- ══ 탈퇴 처리 보조 (handleWithdrawal) ══ -->
+
+    <!--
+        selectHostPlanNos
+        - 탈퇴 회원이 호스트인 계획 번호 목록 조회
+        - handleWithdrawal 에서 위임·삭제 대상 식별용
+    -->
+    <select id="selectHostPlanNos" resultType="Long">
+        SELECT TRAVEL_PLAN_NO
+          FROM TRAVEL_PLAN
+         WHERE HOST_MEMBER_NO = #{memberNo}
+    </select>
+
+
+    <!--
+        selectFirstGuestMemberNo
+        - 계획의 활성 게스트 중 가장 오래된 비호스트 MEMBER_NO 조회
+        - PLAN_GUEST_LEAVE 없는 게스트만 대상 (내보내기·탈퇴 제외)
+        - CREATE_DT ASC → 첫 번째 가입자를 우선 위임 대상으로 선택
+        - 결과 없으면 NULL 반환 (호스트 혼자인 계획)
+    -->
+    <select id="selectFirstGuestMemberNo" resultType="Long">
+        SELECT MEMBER_NO
+          FROM (SELECT PG.MEMBER_NO
+                  FROM PLAN_GUEST PG
+                 WHERE PG.TRAVEL_PLAN_NO = #{planNo}
+                   AND PG.MEMBER_NO      != #{hostMemberNo}
+                   AND NOT EXISTS (
+                       SELECT 1 FROM PLAN_GUEST_LEAVE PGL
+                        WHERE PGL.PLAN_GUEST_NO = PG.PLAN_GUEST_NO
+                   )
+                 ORDER BY PG.CREATE_DT ASC)
+         WHERE ROWNUM = 1
+    </select>
+
+
+    <!--
+        계획 삭제 — FK 제약 순서대로 호출해야 함
+        1. TRAVEL_ITINERARY_HIST  (FK: TRAVEL_ITINERARY_NO, PLAN_GUEST_NO)
+        2. ITINERARY_EXPENSE      (FK: TRAVEL_ITINERARY_NO)
+        3. TRAVEL_ITINERARY       (FK: TRAVEL_PLAN_NO)
+        4. PLAN_GUEST_LEAVE       (FK: PLAN_GUEST_NO)
+        5. PLAN_GUEST             (FK: TRAVEL_PLAN_NO)
+        6. TRAVEL_INVITATION      (FK: TRAVEL_PLAN_NO)
+        7. TRAVEL_PLAN
+    -->
+    <delete id="deleteHistoryByPlanNo">
+        DELETE FROM TRAVEL_ITINERARY_HIST
+         WHERE TRAVEL_ITINERARY_NO IN (
+               SELECT TRAVEL_ITINERARY_NO FROM TRAVEL_ITINERARY
+                WHERE TRAVEL_PLAN_NO = #{planNo})
+    </delete>
+
+    <delete id="deleteExpenseByPlanNo">
+        DELETE FROM ITINERARY_EXPENSE
+         WHERE TRAVEL_ITINERARY_NO IN (
+               SELECT TRAVEL_ITINERARY_NO FROM TRAVEL_ITINERARY
+                WHERE TRAVEL_PLAN_NO = #{planNo})
+    </delete>
+
+    <delete id="deleteItineraryByPlanNo">
+        DELETE FROM TRAVEL_ITINERARY WHERE TRAVEL_PLAN_NO = #{planNo}
+    </delete>
+
+    <delete id="deletePlanGuestLeaveByPlanNo">
+        DELETE FROM PLAN_GUEST_LEAVE
+         WHERE PLAN_GUEST_NO IN (
+               SELECT PLAN_GUEST_NO FROM PLAN_GUEST
+                WHERE TRAVEL_PLAN_NO = #{planNo})
+    </delete>
+
+    <delete id="deletePlanGuestByPlanNo">
+        DELETE FROM PLAN_GUEST WHERE TRAVEL_PLAN_NO = #{planNo}
+    </delete>
+
+    <delete id="deleteInvitationByPlanNo">
+        DELETE FROM TRAVEL_INVITATION WHERE TRAVEL_PLAN_NO = #{planNo}
+    </delete>
+
+    <delete id="deleteInviteCodeByPlanNo">
+        DELETE FROM TRAVEL_INVITATION
+         WHERE TRAVEL_PLAN_NO = #{planNo}
+           AND INVITE_CODE IS NOT NULL
+           AND INVITEE_MEMBER_NO IS NULL
+    </delete>
+
+    <!-- HOST_MEMBER_NO 조건으로 비호스트 삭제 차단 -->
+    <delete id="deletePlan">
+        DELETE FROM TRAVEL_PLAN
+         WHERE TRAVEL_PLAN_NO = #{planNo}
+           AND HOST_MEMBER_NO = #{hostMemberNo}
+    </delete>
+
+
+    <!--
+        selectGuests : 현재 활성 게스트 목록 조회 (호스트 먼저, 참여일 오름차순)
+        - PLAN_GUEST_LEAVE 가 없는 게스트만 포함 (소프트 삭제 방식)
+          PLAN_GUEST_LEAVE 에 레코드가 있으면 탈퇴·내보내기 처리된 것으로 간주
+        - host    : TRAVEL_PLAN.HOST_MEMBER_NO 와 일치하면 1(true)
+        - canEdit : PLAN_GUEST.CAN_EDIT (1=편집 가능, 0=읽기 전용, NULL이면 1 처리)
+    -->
+    <select id="selectGuests" resultType="com.doit.app.domain.GuestVo">
+        SELECT PG.MEMBER_NO                                        AS memberId
+             , MA.NICKNAME                                         AS nickname
+             , CASE WHEN TP.HOST_MEMBER_NO = PG.MEMBER_NO
+                    THEN 1 ELSE 0 END                              AS host
+             , NVL(PG.CAN_EDIT, 1)                                AS canEdit
+             , TO_CHAR(PG.CREATE_DT, 'YYYY-MM-DD')                AS joinedAt
+          FROM PLAN_GUEST    PG
+          JOIN MEMBER_ACTIVE MA ON MA.MEMBER_NO      = PG.MEMBER_NO
+          JOIN TRAVEL_PLAN   TP ON TP.TRAVEL_PLAN_NO = PG.TRAVEL_PLAN_NO
+         WHERE PG.TRAVEL_PLAN_NO = #{planNo}
+           AND NOT EXISTS (
+               SELECT 1 FROM PLAN_GUEST_LEAVE PGL
+                WHERE PGL.PLAN_GUEST_NO = PG.PLAN_GUEST_NO
+           )
+         ORDER BY CASE WHEN TP.HOST_MEMBER_NO = PG.MEMBER_NO THEN 0 ELSE 1 END,
+                  PG.CREATE_DT ASC
+    </select>
+
+
+    <!--
+        updateGuestPermission : 게스트 편집 권한 변경 (호스트 전용)
+        - CAN_EDIT : 1(편집 가능) / 0(읽기 전용)
+        - 호스트 본인 변경 방지는 컨트롤러에서 처리
+    -->
+    <update id="updateGuestPermission">
+        UPDATE PLAN_GUEST
+           SET CAN_EDIT = #{canEdit}
+         WHERE TRAVEL_PLAN_NO = #{planNo}
+           AND MEMBER_NO      = #{memberNo}
+    </update>
+
+
+    <!--
+        countActiveGuests : 계획의 현재 활성 게스트 수 (8명 제한 체크용)
+        - PLAN_GUEST_LEAVE 가 없는 게스트만 카운트 (탈퇴·내보내기 제외)
+    -->
+    <select id="countActiveGuests" resultType="int">
+        SELECT COUNT(1)
+          FROM PLAN_GUEST PG
+         WHERE PG.TRAVEL_PLAN_NO = #{planNo}
+           AND NOT EXISTS (
+               SELECT 1 FROM PLAN_GUEST_LEAVE L
+                WHERE L.PLAN_GUEST_NO = PG.PLAN_GUEST_NO
+           )
+    </select>
+
+
+    <!-- selectPlanNoByInviteCode : 초대코드로 planNo 조회 -->
+    <select id="selectPlanNoByInviteCode" resultType="Long">
+        SELECT TRAVEL_PLAN_NO
+          FROM TRAVEL_INVITATION
+         WHERE INVITE_CODE = #{inviteCode}
+           AND ROWNUM = 1
+    </select>
+
+
+    <!-- selectPlanGuestExists : 이미 참여 중인지 확인 -->
+    <select id="selectPlanGuestExists" resultType="int">
+        SELECT COUNT(*)
+          FROM PLAN_GUEST
+         WHERE TRAVEL_PLAN_NO = #{planNo}
+           AND MEMBER_NO      = #{memberNo}
+    </select>
+
+
+    <!-- selectPlanGuestNoByMember : 특정 멤버의 PLAN_GUEST_NO 조회 (내보내기용) -->
+    <select id="selectPlanGuestNoByMember" resultType="Long">
+        SELECT PLAN_GUEST_NO
+          FROM PLAN_GUEST
+         WHERE TRAVEL_PLAN_NO = #{planNo}
+           AND MEMBER_NO      = #{memberNo}
+    </select>
+
+
+    <!-- insertPlanGuestLeave : 게스트 탈퇴 이력 기록 -->
+    <insert id="insertPlanGuestLeave">
+        INSERT INTO PLAN_GUEST_LEAVE (PLAN_GUEST_NO, LEAVE_DATE, LEAVE_TYPE)
+        VALUES (#{planGuestNo}, SYSDATE, #{leaveType})
+    </insert>
+
+
+    <!-- deletePlanGuestByMember : 특정 게스트 삭제 -->
+    <delete id="deletePlanGuestByMember">
+        DELETE FROM PLAN_GUEST
+         WHERE TRAVEL_PLAN_NO = #{planNo}
+           AND MEMBER_NO      = #{memberNo}
+    </delete>
+
+
+    <!-- updatePlanHost : 호스트 위임 (현재 호스트만 실행 가능) -->
+    <update id="updatePlanHost">
+        UPDATE TRAVEL_PLAN
+           SET HOST_MEMBER_NO = #{newHostMemberNo}
+         WHERE TRAVEL_PLAN_NO  = #{planNo}
+           AND HOST_MEMBER_NO  = #{currentHostMemberNo}
+    </update>
+
+
+    <!--
+        updatePlanVisibility : 계획 공개/비공개 설정 변경 (호스트만)
+        - IS_PUBLIC : 1(공개) / 0(비공개)
+        - HOST_MEMBER_NO 조건으로 비호스트 변경 차단
+    -->
+    <update id="updatePlanVisibility">
+        UPDATE TRAVEL_PLAN
+           SET IS_PUBLIC     = #{isPublic}
+         WHERE TRAVEL_PLAN_NO = #{planNo}
+           AND HOST_MEMBER_NO = #{hostMemberNo}
+    </update>
+
+
+    <!--
+        updatePlan : 계획 수정 (호스트만)
+        - TRAVEL_THEME_CD : 테마명 → 코드 서브쿼리
+        - HOST_MEMBER_NO = #{hostMemberNo} 조건으로 비호스트 수정 차단
+        - REVISION_DT 를 SYSDATE 로 갱신
+    -->
+    <update id="updatePlan" parameterType="com.doit.app.domain.PlanVo">
+        UPDATE TRAVEL_PLAN
+           SET TRAVEL_NAME      = #{title}
+             , TRAVEL_THEME_CD  = (SELECT TRAVEL_THEME_CD FROM TRAVEL_THEME WHERE TRAVEL_THEME_NM = #{theme})
+             , TRAVEL_START_DT  = TO_DATE(#{startDate}, 'YYYY-MM-DD')
+             , TRAVEL_END_DT    = TO_DATE(#{endDate},   'YYYY-MM-DD')
+             , OUTLINE          = #{overview}
+             , REVISION_DT      = SYSDATE
+         WHERE TRAVEL_PLAN_NO   = #{id}
+           AND HOST_MEMBER_NO   = #{hostMemberNo}
+    </update>
+
+
+</mapper>
