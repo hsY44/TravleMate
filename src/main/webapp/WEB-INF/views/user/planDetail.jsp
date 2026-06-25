@@ -310,13 +310,25 @@
                 </label>
                 <input type="hidden" id="schedContentNo">
                 <input type="hidden" id="schedContentImage">
+                <input type="hidden" id="schedMapX">
+                <input type="hidden" id="schedMapY">
                 <div class="mb-2 flex gap-2">
                     <select id="schedContentCategory" onchange="triggerContentSearch()"
                             class="rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400 text-sm">
-                        <option value="all">전체 유형</option>
-                        <c:forEach var="cat" items="${cateList}">
-                            <option value="${cat.contentTypeId}">${cat.contentDiv}</option>
-                        </c:forEach>
+                        <option value="all" data-source="tourapi">전체 — 관광공사</option>
+                        <optgroup label="관광/문화 — 한국관광공사">
+                            <c:forEach var="cat" items="${cateList}">
+                                <c:if test="${cat.contentTypeId eq '12' or cat.contentTypeId eq '14' or cat.contentTypeId eq '15' or cat.contentTypeId eq '25' or cat.contentTypeId eq '28'}">
+                                    <option value="${cat.contentTypeId}" data-source="tourapi">${cat.contentDiv}</option>
+                                </c:if>
+                            </c:forEach>
+                        </optgroup>
+                        <optgroup label="맛집/숙박/쇼핑 — Kakao">
+                            <option value="FD6" data-source="kakao" data-cgc="FD6">음식점</option>
+                            <option value="CE7" data-source="kakao" data-cgc="CE7">카페</option>
+                            <option value="AD5" data-source="kakao" data-cgc="AD5">숙박</option>
+                            <option value="MT1" data-source="kakao" data-cgc="MT1">쇼핑</option>
+                        </optgroup>
                     </select>
                     <input type="text" id="schedContentAddr" placeholder="지역 (예: 서울)" autocomplete="off"
                            oninput="triggerContentSearch()"

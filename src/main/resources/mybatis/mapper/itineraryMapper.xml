@@ -15,6 +15,8 @@
              , TI.CONTENT_NO                             AS contentNo
              , C.TITLE                                   AS contentName
              , C.FIRSTIMAGE                              AS contentImage
+             , NVL(C.MAPX, TI.MAP_X)                    AS mapX
+             , NVL(C.MAPY, TI.MAP_Y)                    AS mapY
              , NVL(IE.EXPENSE_AMT,    0)                 AS cost
              , NVL(IE.ESTIMATED_AMT,  0)                 AS estimatedCost
              , IET.EXPENSE_TYPE_NM                       AS costCategory
@@ -42,6 +44,8 @@
              , TI.CONTENT_NO                             AS contentNo
              , C.TITLE                                   AS contentName
              , C.FIRSTIMAGE                              AS contentImage
+             , NVL(C.MAPX, TI.MAP_X)                    AS mapX
+             , NVL(C.MAPY, TI.MAP_Y)                    AS mapY
              , NVL(IE.EXPENSE_AMT,    0)                 AS cost
              , NVL(IE.ESTIMATED_AMT,  0)                 AS estimatedCost
              , IET.EXPENSE_TYPE_NM                       AS costCategory
@@ -69,12 +73,16 @@
             <if test="time != null and time != ''">, ITINERARY_TIME</if>
             <if test="content != null and content != ''">, ITINERARY_MEMO</if>
             <if test="contentNo != null">, CONTENT_NO</if>
+            <if test="mapX != null and mapX != ''">, MAP_X</if>
+            <if test="mapY != null and mapY != ''">, MAP_Y</if>
             )
         VALUES
             (#{id}, #{planNo}, TO_DATE(#{itineraryDt}, 'YYYY-MM-DD'), #{title}
             <if test="time != null and time != ''">, #{time}</if>
             <if test="content != null and content != ''">, #{content}</if>
             <if test="contentNo != null">, #{contentNo}</if>
+            <if test="mapX != null and mapX != ''">, #{mapX}</if>
+            <if test="mapY != null and mapY != ''">, #{mapY}</if>
             )
     </insert>
 
@@ -85,7 +93,9 @@
             ITINERARY_NM   = #{title},
             ITINERARY_TIME = <if test="time != null and time != ''">#{time}</if><if test="time == null or time == ''">NULL</if>,
             ITINERARY_MEMO = <if test="content != null and content != ''">#{content}</if><if test="content == null or content == ''">NULL</if>,
-            CONTENT_NO     = <if test="contentNo != null">#{contentNo}</if><if test="contentNo == null">NULL</if>
+            CONTENT_NO     = <if test="contentNo != null">#{contentNo}</if><if test="contentNo == null">NULL</if>,
+            MAP_X          = <if test="mapX != null and mapX != ''">#{mapX}</if><if test="mapX == null or mapX == ''">NULL</if>,
+            MAP_Y          = <if test="mapY != null and mapY != ''">#{mapY}</if><if test="mapY == null or mapY == ''">NULL</if>
         </set>
          WHERE TRAVEL_ITINERARY_NO = #{id}
            AND TRAVEL_PLAN_NO      = #{planNo}

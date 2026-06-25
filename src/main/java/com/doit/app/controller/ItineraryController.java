@@ -308,6 +308,12 @@ public class ItineraryController
             sc.setContentNo(Long.parseLong(cnRaw.toString()));
         }
 
+        Object mxRaw = body.get("mapX");
+        if (mxRaw != null && !mxRaw.toString().isBlank()) sc.setMapX(mxRaw.toString());
+
+        Object myRaw = body.get("mapY");
+        if (myRaw != null && !myRaw.toString().isBlank()) sc.setMapY(myRaw.toString());
+
         // 비용 관련 필드 (서비스에서 insertExpense 에 직접 전달)
         sc.setEstimatedCost(parseLong(body.get("estimatedCost")));
         sc.setPaymentMethod((String) body.get("paymentMethod"));

@@ -22,11 +22,14 @@ public class ScheduleVo
     private String time;            // TRAVEL_ITINERARY.ITINERARY_TIME (HH:mm)
     private String title;           // TRAVEL_ITINERARY.ITINERARY_TITLE
     private String content;         // TRAVEL_ITINERARY.MEMO
-    private Long   contentNo;       // TRAVEL_ITINERARY.CONTENT_NO (선택)
+    private Long   contentNo;        // TRAVEL_ITINERARY.CONTENT_NO (선택)
+    private String mapX;             // TRAVEL_ITINERARY.MAP_X — Kakao 검색 장소 경도 (contentNo 없을 때만 저장)
+    private String mapY;             // TRAVEL_ITINERARY.MAP_Y — Kakao 검색 장소 위도 (contentNo 없을 때만 저장)
 
     /* -- 읽기 전용 (JOIN 결과) -- */
     private String contentName;     // CONTENT.TITLE
     private String contentImage;    // CONTENT.FIRSTIMAGE
+    // mapX, mapY 조회 시: NVL(C.MAPX, TI.MAP_X) — CONTENT 좌표 우선, 없으면 MAP_X/MAP_Y 사용
     private long   cost;            // ITINERARY_EXPENSE.EXPENSE_AMT (없으면 0)
     private long   estimatedCost;   // ITINERARY_EXPENSE.ESTIMATED_AMT (없으면 0)
     private String costCategory;    // ITINERARY_EXPENSE_TYPE.EXPENSE_TYPE_NM

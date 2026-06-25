@@ -75,8 +75,19 @@ const _CONTENT_TYPE_COST_MAP = {
 };
 
 function triggerContentSearch() {
-    const kwd = document.getElementById('schedContentSearch').value;
-    searchContent(kwd);
+    const catEl  = document.getElementById('schedContentCategory');
+    const source = catEl.selectedOptions[0]?.dataset.source || 'tourapi';
+    const cgc    = catEl.selectedOptions[0]?.dataset.cgc   || '';
+    const kwd    = document.getElementById('schedContentSearch').value;
+    const addr   = document.getElementById('schedContentAddr')?.value.trim() || '';
+
+    if (source === 'kakao') {
+        // addr + kwd 합쳐서 Kakao 검색 (Kakao는 "서울 파스타" 같은 지역+키워드 검색 지원)
+        const query = addr ? addr + ' ' + kwd : kwd;
+        searchKakaoPlaces(query.trim(), cgc);
+    } else {
+        searchContent(kwd);
+    }
 }
 
 function searchContent(kwd) {
@@ -130,6 +141,77 @@ function searchContent(kwd) {
     }, 300);
 }
 
+/* ── Kakao 장소 검색 ── */
+function searchKakaoPlaces(kwd, cgc) {
+    clearTimeout(_contentSearchTimer);
+    const results = document.getElementById('contentSearchResults');
+
+    if (!kwd.trim()) {
+        results.classList.add('hidden');
+        return;
+    }
+
+    _contentSearchTimer = setTimeout(async () => {
+        try {
+            const url = ctx + '/kakao/places'
+                      + '?kwd=' + encodeURIComponent(kwd)
+                      + (cgc ? '&cgc=' + cgc : '');
+            const list = await fetchJSON(url);
+
+            if (!list.length) {
+                results.innerHTML = '<p class="px-3 py-2 text-xs text-slate-400">검색 결과가 없습니다.</p>';
+            } else {
+                results.innerHTML = list.map(p => {
+                    const safeName = (p.placeName   || '').replace(/'/g, '&#39;');
+                    const safeX    = (p.x           || '').replace(/'/g, '&#39;');
+                    const safeY    = (p.y           || '').replace(/'/g, '&#39;');
+                    const safeCat  = (p.categoryName|| '').replace(/'/g, '&#39;');
+                    return `<button type="button"
+                                onclick="selectKakaoPlace('${safeName}', '${safeX}', '${safeY}', '${safeCat}')"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-slate-50 border-b border-slate-50 last:border-0">
+                                <div class="h-9 w-9 flex-shrink-0 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                                    </svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold text-slate-900 truncate">${p.placeName}</p>
+                                    <p class="text-xs text-slate-400 truncate">${p.addressName || ''}</p>
+                                </div>
+                            </button>`;
+                }).join('');
+            }
+            results.classList.remove('hidden');
+        } catch (e) {
+            results.classList.add('hidden');
+        }
+    }, 300);
+}
+
+function selectKakaoPlace(name, x, y, categoryName) {
+    // contentNo 클리어 (한국관광공사 선택 해제)
+    document.getElementById('schedContentNo').value    = '';
+    document.getElementById('schedContentImage').value = '';
+    // 좌표 세팅
+    document.getElementById('schedMapX').value = x;
+    document.getElementById('schedMapY').value = y;
+    // 검색창 닫기
+    document.getElementById('schedContentSearch').value = '';
+    document.getElementById('contentSearchResults').classList.add('hidden');
+    // 제목 자동 입력 (비어 있을 때만)
+    const titleEl = document.getElementById('schedTitle');
+    if (!titleEl.value.trim()) titleEl.value = name;
+    // 프리뷰 표시 (이미지 없음 — 카테고리 아이콘 영역만)
+    document.getElementById('schedContentSelectedName').textContent = name;
+    const img     = document.getElementById('schedContentPreviewImg');
+    const preview = document.getElementById('schedContentPreview');
+    img.src = '';
+    img.classList.add('hidden');
+    preview.classList.remove('hidden');
+    preview.classList.add('flex');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
 function selectContent(id, name, image, contentTypeId) {
     document.getElementById('schedContentNo').value    = id;
     document.getElementById('schedContentImage').value = image || '';
@@ -160,6 +242,8 @@ function selectContent(id, name, image, contentTypeId) {
 function clearContentSelection() {
     document.getElementById('schedContentNo').value    = '';
     document.getElementById('schedContentImage').value = '';
+    document.getElementById('schedMapX').value         = '';
+    document.getElementById('schedMapY').value         = '';
     document.getElementById('schedContentSearch').value = '';
     document.getElementById('contentSearchResults').classList.add('hidden');
     const preview = document.getElementById('schedContentPreview');
@@ -183,6 +267,18 @@ function openEditSchedule(id) {
             clearContentSelection();
             if (sc.contentNo) {
                 selectContent(sc.contentNo, sc.contentName || '', sc.contentImage || '');
+            } else if (sc.mapX && sc.mapY) {
+                // Kakao 장소 복원 — 프리뷰만 표시 (이미지 없음)
+                document.getElementById('schedMapX').value = sc.mapX;
+                document.getElementById('schedMapY').value = sc.mapY;
+                document.getElementById('schedContentSelectedName').textContent = sc.title || '';
+                const img     = document.getElementById('schedContentPreviewImg');
+                const preview = document.getElementById('schedContentPreview');
+                img.src = '';
+                img.classList.add('hidden');
+                preview.classList.remove('hidden');
+                preview.classList.add('flex');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             }
             openModal('addScheduleModal');
         })
@@ -203,6 +299,8 @@ function resetScheduleModal() {
     const addrEl = document.getElementById('schedContentAddr');
     if (catEl)  catEl.value  = 'all';
     if (addrEl) addrEl.value = '';
+    document.getElementById('schedMapX').value = '';
+    document.getElementById('schedMapY').value = '';
     clearContentSelection();
 }
 
@@ -217,6 +315,8 @@ async function saveSchedule() {
     const costCategory = document.getElementById('schedCostCat').value;
     const contentNoRaw = document.getElementById('schedContentNo').value;
     const contentNo    = contentNoRaw ? parseInt(contentNoRaw, 10) : null;
+    const mapX         = document.getElementById('schedMapX').value || null;
+    const mapY         = document.getElementById('schedMapY').value || null;
 
     if (!title) { showToast('제목을 입력하세요.', 2000, 'error'); return; }
 
@@ -229,7 +329,7 @@ async function saveSchedule() {
     try {
         await fetchJSON(url, {
             method,
-            body: JSON.stringify({ itineraryDt, time, title, content, contentNo, cost, costCategory })
+            body: JSON.stringify({ itineraryDt, time, title, content, contentNo, cost, costCategory, mapX, mapY })
         });
         closeModal('addScheduleModal');
         location.reload();
