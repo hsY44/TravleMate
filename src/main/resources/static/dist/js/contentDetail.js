@@ -30,7 +30,7 @@ async function toggleDetailFavorite() {
 }
 
 // ── 모달 ──────────────────────────────────────────────────────────
-function openModal(id)  { document.getElementById(id).classList.remove('hidden'); }
+// closeModal: form reset 포함 (common.js closeModal 오버라이드)
 function closeModal(id) {
     const modal = document.getElementById(id);
     if (!modal) return;
@@ -74,7 +74,7 @@ function renderReviewList(response) {
         const firstChar = nickname.charAt(0);
         const createdAt = r.createDt || '';
         const content = r.reviewComment || '내용이 없는 리뷰입니다.';
-        const reviewId = r.id || 0;
+        const reviewId = r.contentReviewNo || 0;
         const rating = r.rating || 0;
 
         // 수정/삭제 or 신고 버튼 분기 (현재 로그인한 회원 번호와 리뷰 작성자 번호 비교)
@@ -244,11 +244,9 @@ async function saveReview() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
         });
-        if (!res.ok) { alert('수정에 실패했습니다.'); return; }
+        if (!res.ok) { showToast('수정에 실패했습니다.', 2000, 'error'); return; }
         closeModal('writeReviewModal');
-        //리뷰 가져오는 메소드 다시 호출
-        //await getReviewList(currentReviewPage);
-		location.reload();
+        location.reload();
     } else {
         // 작성
         const res = await fetch(`${ctx}/contents/review/${contentId}/add`, {
@@ -256,46 +254,18 @@ async function saveReview() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
         });
-        if (!res.ok) { alert('저장에 실패했습니다.'); return; }
+        if (!res.ok) { showToast('저장에 실패했습니다.', 2000, 'error'); return; }
         closeModal('writeReviewModal');
-        //리뷰 가져오는 메소드 다시 호출
-        //await getReviewList(currentReviewPage);
-		location.reload();
+        location.reload();
     }
 }
 
-// 리뷰 작성 모달 열 때 초기화
-document.getElementById('writeReviewModal')
-    .querySelector('button[onclick="openModal(\'writeReviewModal\')"]');
-
-// 리뷰 작성 버튼 클릭 시 폼 초기화
-// 이미 closeModal 에 form reset 추가. 혹시모르니냅둠
-/*document.addEventListener('DOMContentLoaded', () => {
-    const writeBtn = document.querySelector('[onclick="openModal(\'writeReviewModal\')"]');
-    /!*if (writeBtn) {
-        writeBtn.addEventListener('click', () => {
-            document.getElementById('editReviewId').value = '';
-            document.getElementById('reviewContent').value = '';
-            document.getElementsByName()
-            document.getElementById('reviewModalTitle').textContent = '리뷰 작성';
-            document.querySelectorAll('input[name="rating"]').forEach(r => r.checked = false);
-        });
-    }*!/
-});*/
-
 async function deleteReview(id) {
-    document.getElementById('confirmMessage').textContent = '리뷰를 삭제하시겠습니까?';
-    document.getElementById('confirmOkBtn').onclick = async () => {
-        closeModal('confirmModal');
+    openConfirm('리뷰를 삭제하시겠습니까?', async () => {
         const res = await fetch(`${ctx}/contents/review/${contentId}/delete/${id}`, { method: 'DELETE' });
-        if (!res.ok) { alert('삭제에 실패했습니다.'); return; }
-        const el = document.getElementById('review' + id);
-        if (el) el.remove();
-        const currentReviewPage = document.getElementById("currentReviewPage").value;
-        //await getReviewList(currentReviewPage);
-		location.reload();
-    };
-    openModal('confirmModal');
+        if (!res.ok) { showToast('삭제에 실패했습니다.', 2000, 'error'); return; }
+        location.reload();
+    }, true);
 }
 
 // ── 신고 ──────────────────────────────────────────────────────────
@@ -310,7 +280,7 @@ async function submitReport() {
     const reportTypeCd = document.getElementById('reportCategory').value;
     const reportComment  = document.getElementById('reportContent').value.trim();
 
-    if (!reportComment) { alert('신고 내용을 입력해주세요.'); return; }
+    if (!reportComment) { showToast('신고 내용을 입력해주세요.', 2000, 'error'); return; }
 
     const body = { contentReviewNo, reportTypeCd, reportComment };
 
@@ -319,15 +289,10 @@ async function submitReport() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
     });
-    if (!res.ok) { alert('신고를 실패했습니다.'); return; }
-    //리뷰 가져오는 메소드 다시 호출
-    //const currentReviewPage = document.getElementById("currentReviewPage").value;
-    //await getReviewList(currentReviewPage);
-	location.reload();
-
+    if (!res.ok) { showToast('신고에 실패했습니다.', 2000, 'error'); return; }
     showToast("신고가 접수되었습니다.", 1500, "info");
     closeModal('reportModal');
-    document.getElementById('reportContent').value = '';
+    location.reload();
 }
 
 // ── 일정 담기 ─────────────────────────────────────────────────────
@@ -352,9 +317,9 @@ async function addToPlan(planId, contentNo, title) {
     });
     if (res.ok) {
         closeModal('addToPlanModal');
-        alert('여행 일정에 추가되었습니다.');
+        showToast('여행 일정에 추가되었습니다.');
     } else {
-        alert('추가에 실패했습니다.');
+        showToast('추가에 실패했습니다.', 2000, 'error');
     }
 }
 

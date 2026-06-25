@@ -316,13 +316,13 @@ async function deleteTheme(cd, nm, planCount) {
     try {
         const res = await fetch(ctx + '/admin/theme/' + encodeURIComponent(cd), { method: 'DELETE' });
         if (res.status === 409) {
-            alert('사용 중인 계획이 있어 삭제할 수 없습니다.');
+            showToast('사용 중인 계획이 있어 삭제할 수 없습니다.', 2000, 'error');
             return;
         }
         if (!res.ok) throw new Error('HTTP ' + res.status);
         location.reload();
     } catch (e) {
-        alert(e.message || '삭제에 실패했습니다.');
+        showToast(e.message || '삭제에 실패했습니다.', 2000, 'error');
     }
 }
 </script>

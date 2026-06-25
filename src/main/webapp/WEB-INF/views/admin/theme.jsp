@@ -200,7 +200,7 @@ async function saveTheme() {
 
 function deleteTheme(cd, nm, planCount) {
     if (planCount > 0) {
-        alert('"' + nm + '" 테마는 ' + planCount + '개의 여행계획에서 사용 중이므로 삭제할 수 없습니다.');
+        showToast('"' + nm + '" 테마는 ' + planCount + '개의 여행계획에서 사용 중이므로 삭제할 수 없습니다.', 3000, 'error');
         return;
     }
     document.getElementById('confirmMsg').textContent = '"' + nm + '" 테마를 삭제하시겠습니까?';
@@ -214,12 +214,12 @@ function deleteTheme(cd, nm, planCount) {
             const data = await res.json();
             if (data.result === 'inuse') {
                 closeConfirm();
-                alert('사용 중인 계획이 있어 삭제할 수 없습니다.');
+                showToast('사용 중인 계획이 있어 삭제할 수 없습니다.', 2000, 'error');
                 return;
             }
             location.reload();
         } catch (e) {
-            alert('삭제에 실패했습니다.');
+            showToast('삭제에 실패했습니다.', 2000, 'error');
         }
     };
 }

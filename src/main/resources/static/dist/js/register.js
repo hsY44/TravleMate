@@ -20,7 +20,7 @@ async function checkId()
             idChecked = false;
         }
     } catch (e) {
-        showToast('중복확인 중 오류가 발생했습니다.', 'error');
+        showToast('중복확인 중 오류가 발생했습니다.', 2000, 'error');
     }
 }
 
@@ -41,7 +41,7 @@ async function checkNickname()
             nickChecked = false;
         }
     } catch (e) {
-        showToast('중복확인 중 오류가 발생했습니다.', 'error');
+        showToast('중복확인 중 오류가 발생했습니다.', 2000, 'error');
     }
 }
 
@@ -146,7 +146,7 @@ async function submitRegister()
         currentStep = 3;
         renderStep();
     } catch (e) {
-        showToast('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+        showToast('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.', 2000, 'error');
     }
 }
 

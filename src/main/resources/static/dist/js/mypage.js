@@ -67,7 +67,7 @@ async function checkProfileNickname()
     }
     catch (e)
     {
-        showToast('중복확인 중 오류가 발생했습니다.', 'error');
+        showToast('중복확인 중 오류가 발생했습니다.', 2000, 'error');
     }
 }
 
@@ -127,7 +127,7 @@ async function saveProfile()
     }
     catch (e)
     {
-        showToast('저장 중 오류가 발생했습니다.', 'error');
+        showToast('저장 중 오류가 발생했습니다.', 2000, 'error');
     }
 }
 
@@ -208,8 +208,8 @@ async function submitInquiry()
     const qnaTitle   = document.getElementById('inqTitle').value.trim();
     const qnaContent = document.getElementById('inqContent').value.trim();
 
-    if (!qnaTitle)   { showToast('문의 제목을 입력해주세요.', 'error'); return; }
-    if (!qnaContent) { showToast('문의 내용을 입력해주세요.', 'error'); return; }
+    if (!qnaTitle)   { showToast('문의 제목을 입력해주세요.', 2000, 'error'); return; }
+    if (!qnaContent) { showToast('문의 내용을 입력해주세요.', 2000, 'error'); return; }
 
     try
     {
@@ -231,6 +231,6 @@ async function submitInquiry()
     }
     catch (e)
     {
-        showToast('문의 등록 중 오류가 발생했습니다.', 'error');
+        showToast('문의 등록 중 오류가 발생했습니다.', 2000, 'error');
     }
 }

@@ -11,19 +11,6 @@ import lombok.Setter;
 @Setter
 public class PageResponse<T, V> {
 
-	/*
-    private int totalPage;
-    private int size;
-    private long dataCount;
-    private List<T> data;
-
-    public PageResponse(int totalPage, int size, long dataCount, List<T> data) {
-        this.totalPage = totalPage;
-        this.size = size;
-        this.dataCount = dataCount;
-        this.data = data;
-    }
-    */
     private PaginateUtil page;
     private List<V> data;
 

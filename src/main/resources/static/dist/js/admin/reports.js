@@ -1,7 +1,6 @@
 /* admin/reports.js */
 
 function openReportDetail(reportId) {
-    // stub: 추후 API 연동
     document.getElementById('reportDetailContent').innerHTML =
         `<p class="text-sm text-slate-500">신고 ID: ${reportId}</p>`;
     openModal('reportDetailModal');

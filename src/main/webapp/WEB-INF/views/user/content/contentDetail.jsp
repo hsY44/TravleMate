@@ -26,10 +26,9 @@
 
             if (res.ok) {
                 const data = await res.json();
-                console.log("data ", data);
                 renderReviewList(data);
             } else {
-                alert('리뷰를 불러오는 데 실패했습니다.');
+                showToast('리뷰를 불러오는 데 실패했습니다.', 2000, 'error');
             }
         } catch (error) {
             console.error("네트워크 에러 발생:", error);

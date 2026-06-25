@@ -361,7 +361,7 @@ function respondInvitation(invitationNo, action) {
     fetch(ctx + '/invitations/' + invitationNo + '/' + action, { method: 'POST' })
         .then(function(r) {
             if (r.ok) { location.reload(); }
-            else { r.text().then(function(msg) { alert(msg); }); }
+            else { showToast('처리에 실패했습니다.', 2000, 'error'); }
         });
 }
 </script>

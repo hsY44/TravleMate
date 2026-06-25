@@ -55,7 +55,7 @@ public class AdminReviewServiceImpl implements AdminReviewService {
         } catch (Exception e) {
             log.info("updateReviewBlind : ", e);
         }
-        return 0;
+        return result;
     }
 
     @Override
