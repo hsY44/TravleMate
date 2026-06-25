@@ -121,7 +121,7 @@
         VALUES(MEMBER_BOOKMARK_SEQ.NEXTVAL, #{memberNo}, #{contentId})
     </insert>
 
-    <!-- 북마크 등록 -->
+    <!-- 북마크 삭제 -->
     <delete id="deleteBookmark" parameterType="com.doit.app.domain.ContentVO">
         DELETE MEMBER_BOOKMARK
         WHERE MEMBER_NO = #{memberNo} AND CONTENTID = #{contentId}

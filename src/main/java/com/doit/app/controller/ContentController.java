@@ -132,7 +132,6 @@ public class ContentController
 			}
 			if (!kwd.isBlank()) {
 				query += query.contains("?") ? "&" : "?";
-				//query += "schType=" + schType + "&kwd=" + URLEncoder.encode(kwd, "UTF-8");
 				query += "kwd=" + URLEncoder.encode(kwd, "UTF-8");
 			}
 			listUrl += query;

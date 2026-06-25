@@ -3,15 +3,14 @@
 
 <mapper namespace="com.doit.app.mapper.AdminReviewMapper">
 
-    <!-- 조건문. 컨텐츠타입, 제목검색 -->
+    <!-- 조건문. 검색 유형별 필터 -->
     <sql id="where-list">
-        <!-- 컨텐츠ID, 내용, 작성자 닉네임, TODO 처리되지 않은 신고유무 -->
         <choose>
             <!-- 리뷰 번호 -->
             <when test="schType == 'reviewNo'">
                 AND <![CDATA[ A.CONTENT_REVIEW_NO = #{kwd} ]]>
             </when>
-            <!-- 리뷰 번호 -->
+            <!-- 컨텐츠 ID -->
             <when test="schType == 'contentId'">
                 AND <![CDATA[ A.CONTENTID = #{kwd} ]]>
             </when>
