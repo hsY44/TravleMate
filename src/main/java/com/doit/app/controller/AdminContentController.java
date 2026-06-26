@@ -38,7 +38,7 @@ public class AdminContentController {
             , @RequestParam(name = "kwd", defaultValue = "") String kwd
             , HttpSession session
             , Model model
-            , HttpServletRequest req) throws Exception {
+            , HttpServletRequest req) {
 
         try {
             if (!isAdminLoggedIn(session)) { return "redirect:/login"; }
@@ -78,13 +78,14 @@ public class AdminContentController {
 
             if (!category.isBlank() && !category.equals("all")) {
                 query = "category=" + category;
-                query = listUrl.contains("?") ? "&" : "?" + query;
             }
             if (!kwd.isBlank()) {
-                query += query.contains("?") ? "&" : "?";
+                query += query.isEmpty() ? "" : "&";
                 query += "kwd=" + URLEncoder.encode(kwd, "UTF-8");
             }
-            listUrl += query;
+            if (!query.isEmpty()) {
+                listUrl += "?" + query;
+            }
 
             model.addAttribute("contentList", contentList);
             model.addAttribute("cateList", cateList);
@@ -99,8 +100,7 @@ public class AdminContentController {
             model.addAttribute("kwd", kwd);
             model.addAttribute("query", query);
         } catch (Exception e) {
-            log.info("admin/contents : ", e);
-            throw e;
+            log.error("admin/contents : ", e);
         }
 
         return "admin/contents";
@@ -144,7 +144,7 @@ public class AdminContentController {
             model.addAttribute("query", query);
 
         } catch (Exception e) {
-            log.info("admin/contentDetail : ", e);
+            log.error("admin/contentDetail : ", e);
         }
 
         return "admin/contentDetail";

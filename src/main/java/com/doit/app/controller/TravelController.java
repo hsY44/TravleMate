@@ -19,7 +19,6 @@ package com.doit.app.controller;
 import com.doit.app.domain.GuestVo;
 import com.doit.app.domain.MemberVo;
 import com.doit.app.domain.PlanVo;
-import com.doit.app.mapper.TravelMapper;
 import com.doit.app.service.ChecklistService;
 import com.doit.app.service.ContentService;
 import com.doit.app.service.ItineraryService;
@@ -47,7 +46,6 @@ import java.util.Map;
 @Slf4j
 public class TravelController
 {
-    private final TravelMapper      travelMapper;
     private final TravelService     travelService;
     private final ItineraryService  itineraryService;
     private final ContentService    contentService;
@@ -84,9 +82,9 @@ public class TravelController
 
         Long memberNo = memberNo(session);
 
-        List<PlanVo> myPlans     = travelMapper.selectMyPlans(memberNo, theme, startDate, endDate);
-        List<PlanVo> joinedPlans = travelMapper.selectJoinedPlans(memberNo, theme, startDate, endDate);
-        List<String> themes      = travelMapper.selectThemeNames();
+        List<PlanVo> myPlans     = travelService.getMyPlans(memberNo, theme, startDate, endDate);
+        List<PlanVo> joinedPlans = travelService.getJoinedPlans(memberNo, theme, startDate, endDate);
+        List<String> themes      = travelService.getThemeNames();
 
         model.addAttribute("myPlans",     myPlans);
         model.addAttribute("joinedPlans", joinedPlans);
@@ -98,26 +96,26 @@ public class TravelController
 
     @PostMapping("/plans")
     @ResponseBody
-    public Map<String, Object> createPlan(@RequestBody PlanVo planVo,
-                                          HttpSession session)
+    public ResponseEntity<?> createPlan(@RequestBody PlanVo planVo,
+                                        HttpSession session)
     {
-        if (!isLoggedIn(session)) return Map.of("error", "로그인이 필요합니다.");
+        if (!isLoggedIn(session)) return ResponseEntity.status(401).body("로그인이 필요합니다.");
 
         Long memberNo = memberNo(session);
 
         // 호스트 보유 계획 20개 제한
-        if (travelMapper.countHostPlans(memberNo) >= 20)
-            return Map.of("error", "계획은 최대 20개까지 생성할 수 있습니다.");
+        if (travelService.countHostPlans(memberNo) >= 20)
+            return ResponseEntity.badRequest().body("계획은 최대 20개까지 생성할 수 있습니다.");
 
         // 날짜 겹침 검사 (생성이므로 자신 제외 없음 → null)
-        if (travelMapper.checkDateOverlap(memberNo,
-                                          planVo.getStartDate(),
-                                          planVo.getEndDate(),
-                                          null) > 0)
-            return Map.of("error", "해당 날짜에 이미 참여 중인 계획이 있습니다.");
+        if (travelService.checkDateOverlap(memberNo,
+                                           planVo.getStartDate(),
+                                           planVo.getEndDate(),
+                                           null) > 0)
+            return ResponseEntity.status(409).body("해당 날짜에 이미 참여 중인 계획이 있습니다.");
 
         Long planNo = travelService.createPlan(planVo, memberNo);
-        return Map.of("id", planNo);
+        return ResponseEntity.ok(Map.of("id", planNo));
     }
 
 
@@ -129,7 +127,7 @@ public class TravelController
         if (!isLoggedIn(session)) return "redirect:/login";
 
         Long   memberNo = memberNo(session);
-        PlanVo plan     = travelMapper.selectPlanDetail(planNo);
+        PlanVo plan     = travelService.getPlanDetail(planNo);
 
         if (plan == null) return "redirect:/plans";
 
@@ -165,7 +163,7 @@ public class TravelController
         model.addAttribute("totalEstimatedCost",   itineraryService.getTotalEstimatedCost(planNo));
         model.addAttribute("history",      itineraryService.getHistory(planNo));
 
-        model.addAttribute("themes",       travelMapper.selectThemeNames());
+        model.addAttribute("themes",       travelService.getThemeNames());
         model.addAttribute("expenseTypes", itineraryService.getExpenseTypeNames());
         model.addAttribute("cateList",     contentService.listCategory());
 
@@ -193,15 +191,15 @@ public class TravelController
         }
 
         // 코드 유효성 확인 - null 이면 존재하지 않는 코드
-        Long planNo = travelMapper.selectPlanNoByInviteCode(inviteCode.trim());
+        Long planNo = travelService.getPlanNoByInviteCode(inviteCode.trim());
         if (planNo == null) return ResponseEntity.badRequest().body("유효하지 않은 초대 코드입니다.");
 
         Long memberNo = memberNo(session);
 
         // 이미 참여 중이면 인원 체크 없이 통과 (joinByInviteCode 내부에서 중복 INSERT 방지)
         // 신규 참여자만 8명 제한 적용
-        if (travelMapper.selectPlanGuestExists(planNo, memberNo) == 0
-                && travelMapper.countActiveGuests(planNo) >= 8) {
+        if (travelService.planGuestExists(planNo, memberNo) == 0
+                && travelService.countActiveGuests(planNo) >= 8) {
             return ResponseEntity.status(409).body("최대 8명까지 참여 가능합니다.");
         }
 
@@ -219,7 +217,7 @@ public class TravelController
         if (!isLoggedIn(session)) return ResponseEntity.status(401).body("로그인이 필요합니다.");
 
         Long   memberNo = memberNo(session);
-        PlanVo plan     = travelMapper.selectPlanDetail(planNo);
+        PlanVo plan     = travelService.getPlanDetail(planNo);
 
         if (plan == null) return ResponseEntity.notFound().build();
         if (!plan.getHostMemberNo().equals(memberNo))
@@ -245,7 +243,7 @@ public class TravelController
         if (!isLoggedIn(session)) return ResponseEntity.status(401).body("로그인이 필요합니다.");
 
         Long   memberNo = memberNo(session);
-        PlanVo plan     = travelMapper.selectPlanDetail(planNo);
+        PlanVo plan     = travelService.getPlanDetail(planNo);
 
         if (plan == null) return ResponseEntity.notFound().build();
         if (!plan.getHostMemberNo().equals(memberNo))
@@ -255,10 +253,10 @@ public class TravelController
         planVo.setHostMemberNo(memberNo);
 
         // 날짜 겹침 검사 (수정이므로 자신 planNo 제외)
-        if (travelMapper.checkDateOverlap(memberNo,
-                                          planVo.getStartDate(),
-                                          planVo.getEndDate(),
-                                          planNo) > 0)
+        if (travelService.checkDateOverlap(memberNo,
+                                           planVo.getStartDate(),
+                                           planVo.getEndDate(),
+                                           planNo) > 0)
             return ResponseEntity.status(409).body("해당 날짜에 이미 참여 중인 계획이 있습니다.");
 
         travelService.updatePlan(planVo);
@@ -280,7 +278,7 @@ public class TravelController
         if (!isLoggedIn(session)) return ResponseEntity.status(401).body("로그인이 필요합니다.");
 
         Long   memberNo = memberNo(session);
-        PlanVo plan     = travelMapper.selectPlanDetail(planNo);
+        PlanVo plan     = travelService.getPlanDetail(planNo);
 
         if (plan == null) return ResponseEntity.notFound().build();
         if (!plan.getHostMemberNo().equals(memberNo))
@@ -290,7 +288,7 @@ public class TravelController
         if (isPublic == null || (isPublic != 0 && isPublic != 1))
             return ResponseEntity.badRequest().body("isPublic 값은 0 또는 1이어야 합니다.");
 
-        travelMapper.updatePlanVisibility(planNo, memberNo, isPublic);
+        travelService.updatePlanVisibility(planNo, memberNo, isPublic);
         return ResponseEntity.ok().build();
     }
 
@@ -303,7 +301,7 @@ public class TravelController
         if (!isLoggedIn(session)) return ResponseEntity.status(401).body("로그인이 필요합니다.");
 
         Long   memberNo = memberNo(session);
-        PlanVo plan     = travelMapper.selectPlanDetail(planNo);
+        PlanVo plan     = travelService.getPlanDetail(planNo);
 
         if (plan == null) return ResponseEntity.notFound().build();
         if (plan.getHostMemberNo().equals(memberNo))
@@ -323,7 +321,7 @@ public class TravelController
         if (!isLoggedIn(session)) return ResponseEntity.status(401).body("로그인이 필요합니다.");
 
         Long   memberNo = memberNo(session);
-        PlanVo plan     = travelMapper.selectPlanDetail(planNo);
+        PlanVo plan     = travelService.getPlanDetail(planNo);
 
         if (plan == null) return ResponseEntity.notFound().build();
         if (!plan.getHostMemberNo().equals(memberNo))
@@ -361,7 +359,7 @@ public class TravelController
         if (newHostMemberNo == null) return ResponseEntity.badRequest().body("newHostMemberNo 필수");
 
         Long   memberNo = memberNo(session);
-        PlanVo plan     = travelMapper.selectPlanDetail(planNo);
+        PlanVo plan     = travelService.getPlanDetail(planNo);
 
         if (plan == null) return ResponseEntity.notFound().build();
         if (!plan.getHostMemberNo().equals(memberNo))
@@ -392,7 +390,7 @@ public class TravelController
         if (inviteeMemberNo == null) return ResponseEntity.badRequest().body("inviteeMemberNo 필수");
 
         Long   memberNo = memberNo(session);
-        PlanVo plan     = travelMapper.selectPlanDetail(planNo);
+        PlanVo plan     = travelService.getPlanDetail(planNo);
 
         if (plan == null) return ResponseEntity.notFound().build();
         if (!plan.getHostMemberNo().equals(memberNo))
@@ -453,7 +451,7 @@ public class TravelController
         if (!isLoggedIn(session)) return ResponseEntity.status(401).body("로그인이 필요합니다.");
 
         Long   memberNo = memberNo(session);
-        PlanVo plan     = travelMapper.selectPlanDetail(planNo);
+        PlanVo plan     = travelService.getPlanDetail(planNo);
 
         if (plan == null) return ResponseEntity.notFound().build();
         if (!plan.getHostMemberNo().equals(memberNo))
@@ -480,7 +478,7 @@ public class TravelController
         if (!isLoggedIn(session)) return ResponseEntity.status(401).body("로그인이 필요합니다.");
 
         Long   memberNo = memberNo(session);
-        PlanVo plan     = travelMapper.selectPlanDetail(planNo);
+        PlanVo plan     = travelService.getPlanDetail(planNo);
 
         if (plan == null) return ResponseEntity.notFound().build();
         if (!plan.getHostMemberNo().equals(memberNo))
@@ -494,7 +492,7 @@ public class TravelController
         if (canEdit == null || (canEdit != 0 && canEdit != 1))
             return ResponseEntity.badRequest().body("canEdit 값은 0 또는 1이어야 합니다.");
 
-        int rows = travelMapper.updateGuestPermission(planNo, memberId, canEdit);
+        int rows = travelService.updateGuestPermission(planNo, memberId, canEdit);
         return rows > 0 ? ResponseEntity.ok().build()
                         : ResponseEntity.badRequest().body("해당 게스트를 찾을 수 없습니다.");
     }

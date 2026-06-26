@@ -141,7 +141,12 @@ public class AdminMemberController
             return ResponseEntity.status(401).body(Map.of("result", "unauthorized"));
         }
 
-        int    level   = Integer.parseInt(body.getOrDefault("level",   "1").toString());
+        int level;
+        try {
+            level = Integer.parseInt(body.getOrDefault("level", "1").toString());
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body(Map.of("result", "invalid level"));
+        }
         String reason  = (String) body.getOrDefault("reason",  "");
         String comment = (String) body.getOrDefault("comment", "");
 

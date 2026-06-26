@@ -61,8 +61,13 @@ public class AdminQnaController
                                                            HttpSession session)
     {
         if (!isAdminLoggedIn(session)) { return ResponseEntity.status(401).body(Map.of("result", "unauthorized")); }
-        adminQnaService.addQnaType(vo);
-        return ResponseEntity.ok(Map.of("result", "ok"));
+        try {
+            adminQnaService.addQnaType(vo);
+            return ResponseEntity.ok(Map.of("result", "ok"));
+        } catch (Exception e) {
+            log.error("addQnaType : ", e);
+            return ResponseEntity.internalServerError().body(Map.of("result", "error"));
+        }
     }
 
     // PUT /admin/qnaType/{cd} - 문의 카테고리 수정 (AJAX)
@@ -73,9 +78,14 @@ public class AdminQnaController
                                                             HttpSession session)
     {
         if (!isAdminLoggedIn(session)) { return ResponseEntity.status(401).body(Map.of("result", "unauthorized")); }
-        vo.setQnaTypeCd(cd);
-        adminQnaService.editQnaType(vo);
-        return ResponseEntity.ok(Map.of("result", "ok"));
+        try {
+            vo.setQnaTypeCd(cd);
+            adminQnaService.editQnaType(vo);
+            return ResponseEntity.ok(Map.of("result", "ok"));
+        } catch (Exception e) {
+            log.error("editQnaType : ", e);
+            return ResponseEntity.internalServerError().body(Map.of("result", "error"));
+        }
     }
 
 
@@ -113,9 +123,14 @@ public class AdminQnaController
                                             HttpSession session)
     {
         if (!isAdminLoggedIn(session)) { return ResponseEntity.status(401).build(); }
-        QnaVo qna = adminQnaService.getQnaDetail(qnaReqNo);
-        if (qna == null) { return ResponseEntity.notFound().build(); }
-        return ResponseEntity.ok(qna);
+        try {
+            QnaVo qna = adminQnaService.getQnaDetail(qnaReqNo);
+            if (qna == null) { return ResponseEntity.notFound().build(); }
+            return ResponseEntity.ok(qna);
+        } catch (Exception e) {
+            log.error("qnaDetail : ", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     // POST /admin/qna/{qnaReqNo}/answer - 답변 등록 (AJAX)
@@ -133,7 +148,12 @@ public class AdminQnaController
             return ResponseEntity.badRequest().body(Map.of("result", "empty"));
         }
 
-        adminQnaService.submitAnswer(qnaReqNo, adminNo(session), ansContent);
-        return ResponseEntity.ok(Map.of("result", "ok"));
+        try {
+            adminQnaService.submitAnswer(qnaReqNo, adminNo(session), ansContent);
+            return ResponseEntity.ok(Map.of("result", "ok"));
+        } catch (Exception e) {
+            log.error("submitAnswer : ", e);
+            return ResponseEntity.internalServerError().body(Map.of("result", "error"));
+        }
     }
 }

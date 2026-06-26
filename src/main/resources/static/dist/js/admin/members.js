@@ -1,5 +1,13 @@
 /* admin/members.js */
 
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;');
+}
+
 function openDrawer(memberId) {
     // 드로어를 먼저 열고 로딩 표시
     document.getElementById('drawerContent').innerHTML =
@@ -21,27 +29,27 @@ function openDrawer(memberId) {
                     </div>
                     <div>
                         <dt class="mb-0.5 text-xs font-semibold text-slate-400">아이디</dt>
-                        <dd class="text-sm font-semibold text-slate-900">${data.loginId ?? '-'}</dd>
+                        <dd class="text-sm font-semibold text-slate-900">${escapeHtml(data.loginId) || '-'}</dd>
                     </div>
                     <div>
                         <dt class="mb-0.5 text-xs font-semibold text-slate-400">이름</dt>
-                        <dd class="text-sm font-semibold text-slate-900">${data.name ?? '-'}</dd>
+                        <dd class="text-sm font-semibold text-slate-900">${escapeHtml(data.name) || '-'}</dd>
                     </div>
                     <div>
                         <dt class="mb-0.5 text-xs font-semibold text-slate-400">닉네임</dt>
-                        <dd class="text-sm font-semibold text-slate-900">${data.nickname ?? '-'}</dd>
+                        <dd class="text-sm font-semibold text-slate-900">${escapeHtml(data.nickname) || '-'}</dd>
                     </div>
                     <div>
                         <dt class="mb-0.5 text-xs font-semibold text-slate-400">이메일</dt>
-                        <dd class="text-sm font-semibold text-slate-900">${data.email ?? '-'}</dd>
+                        <dd class="text-sm font-semibold text-slate-900">${escapeHtml(data.email) || '-'}</dd>
                     </div>
                     <div>
                         <dt class="mb-0.5 text-xs font-semibold text-slate-400">전화번호</dt>
-                        <dd class="text-sm font-semibold text-slate-900">${data.phoneNo ?? '-'}</dd>
+                        <dd class="text-sm font-semibold text-slate-900">${escapeHtml(data.phoneNo) || '-'}</dd>
                     </div>
                     <div>
                         <dt class="mb-0.5 text-xs font-semibold text-slate-400">가입일</dt>
-                        <dd class="text-sm font-semibold text-slate-900">${data.createDt ?? '-'}</dd>
+                        <dd class="text-sm font-semibold text-slate-900">${escapeHtml(data.createDt) || '-'}</dd>
                     </div>
                 </dl>`;
         })

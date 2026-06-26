@@ -43,7 +43,7 @@ public class KakaoController
             List<KakaoPlaceVo> places = kakaoLocalService.search(kwd, cgc);
             return ResponseEntity.ok(places);
         } catch (Exception e) {
-            log.info("searchPlaces : ", e);
+            log.error("searchPlaces : ", e);
             return ResponseEntity.internalServerError().build();
         }
     }

@@ -33,7 +33,7 @@ public class ContentServiceImpl implements ContentService {
         try {
             result = mapper.dataCount(map);
         } catch (Exception e) {
-            log.info("dataCount : ", e);
+            log.error("dataCount : ", e);
         }
 
 		return result;
@@ -52,7 +52,7 @@ public class ContentServiceImpl implements ContentService {
 		try {
 			list = mapper.listContent(map);
 		} catch (Exception e) {
-			log.info("listContent : ", e);
+			log.error("listContent : ", e);
 		}
 		
 		return list;
@@ -70,13 +70,11 @@ public class ContentServiceImpl implements ContentService {
 		try {
 			list = mapper.listCategory();
 		} catch (Exception e) {
-			log.info("listCategory : ", e);
+			log.error("listCategory : ", e);
 		}
 		
 		return list;
 	}
-
-    //
 
     /**
      * 컨텐츠 상세
@@ -92,7 +90,7 @@ public class ContentServiceImpl implements ContentService {
         try {
             content = mapper.selectContentDetail(contentId, memberNo);
         } catch (Exception e) {
-            log.info("contentDetail : ", e);
+            log.error("contentDetail : ", e);
         }
 
         return content;
@@ -109,7 +107,7 @@ public class ContentServiceImpl implements ContentService {
         try {
             images = mapper.selectContentImages(contentId);
         } catch (Exception e) {
-            log.info("getContentImages : ", e);
+            log.error("getContentImages : ", e);
         }
         return images;
     }

@@ -25,10 +25,8 @@
                               FROM MEMBER_ACTIVE
                               WHERE INSTR(NICKNAME, #{kwd}) > 0) ]]>
             </when>
-            <!-- 그 외 -->
-            <otherwise>
-                AND <![CDATA[ INSTR(A.${schType}, #{kwd}) > 0 ]]>
-            </otherwise>
+            <!-- 그 외: 알 수 없는 schType은 필터 없이 전체 조회 -->
+            <otherwise></otherwise>
         </choose>
     </sql>
 

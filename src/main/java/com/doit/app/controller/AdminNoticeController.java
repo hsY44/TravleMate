@@ -66,9 +66,14 @@ public ResponseEntity<NoticeVo> getNotice(@PathVariable(name = "noticeNo") Long 
                                            HttpSession session)
 {
     if (!isAdminLoggedIn(session)) { return ResponseEntity.status(401).build(); }
-    NoticeVo notice = adminNoticeService.getNotice(noticeNo);
-    if (notice == null) { return ResponseEntity.notFound().build(); }
-    return ResponseEntity.ok(notice);
+    try {
+        NoticeVo notice = adminNoticeService.getNotice(noticeNo);
+        if (notice == null) { return ResponseEntity.notFound().build(); }
+        return ResponseEntity.ok(notice);
+    } catch (Exception e) {
+        log.error("getNotice : ", e);
+        return ResponseEntity.internalServerError().build();
+    }
 }
 
 // POST /admin/notice - 등록
@@ -78,12 +83,17 @@ public ResponseEntity<Map<String, Object>> addNotice(@RequestBody Map<String, St
                                                       HttpSession session)
 {
     if (!isAdminLoggedIn(session)) { return ResponseEntity.status(401).body(Map.of("result", "unauthorized")); }
-    int rows = adminNoticeService.addNotice(
-        adminNo(session),
-        body.get("noticeTitle"),
-        body.get("noticeContent")
-    );
-    return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+    try {
+        int rows = adminNoticeService.addNotice(
+            adminNo(session),
+            body.get("noticeTitle"),
+            body.get("noticeContent")
+        );
+        return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+    } catch (Exception e) {
+        log.error("addNotice : ", e);
+        return ResponseEntity.internalServerError().body(Map.of("result", "error"));
+    }
 }
 
 // PUT /admin/notice/{noticeNo} - 수정
@@ -94,12 +104,17 @@ public ResponseEntity<Map<String, Object>> editNotice(@PathVariable(name = "noti
                                                        HttpSession session)
 {
     if (!isAdminLoggedIn(session)) { return ResponseEntity.status(401).body(Map.of("result", "unauthorized")); }
-    int rows = adminNoticeService.editNotice(
-        noticeNo,
-        body.get("noticeTitle"),
-        body.get("noticeContent")
-    );
-    return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+    try {
+        int rows = adminNoticeService.editNotice(
+            noticeNo,
+            body.get("noticeTitle"),
+            body.get("noticeContent")
+        );
+        return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+    } catch (Exception e) {
+        log.error("editNotice : ", e);
+        return ResponseEntity.internalServerError().body(Map.of("result", "error"));
+    }
 }
 
 // DELETE /admin/notice/{noticeNo} - 삭제
@@ -109,7 +124,12 @@ public ResponseEntity<Map<String, Object>> deleteNotice(@PathVariable(name = "no
                                                          HttpSession session)
 {
     if (!isAdminLoggedIn(session)) { return ResponseEntity.status(401).body(Map.of("result", "unauthorized")); }
-    int rows = adminNoticeService.removeNotice(noticeNo);
-    return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+    try {
+        int rows = adminNoticeService.removeNotice(noticeNo);
+        return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+    } catch (Exception e) {
+        log.error("deleteNotice : ", e);
+        return ResponseEntity.internalServerError().body(Map.of("result", "error"));
+    }
 }
 }

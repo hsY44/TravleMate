@@ -27,7 +27,7 @@ public class ChecklistService
         try {
             list = checklistMapper.selectChecklistItems(planNo);
         } catch (Exception e) {
-            log.info("getChecklistItems : ", e);
+            log.error("getChecklistItems : ", e);
         }
         return list;
     }
@@ -41,7 +41,7 @@ public class ChecklistService
             vo.setContent(content);
             checklistMapper.insertChecklistItem(vo);
         } catch (Exception e) {
-            log.info("addChecklistItem : ", e);
+            log.error("addChecklistItem : ", e);
         }
     }
 
@@ -52,7 +52,7 @@ public class ChecklistService
         try {
             result = checklistMapper.updateChecklistItem(no, planNo, content, isChecked);
         } catch (Exception e) {
-            log.info("updateChecklistItem : ", e);
+            log.error("updateChecklistItem : ", e);
         }
         return result > 0;
     }
@@ -64,7 +64,7 @@ public class ChecklistService
         try {
             result = checklistMapper.deleteChecklistItem(no, planNo);
         } catch (Exception e) {
-            log.info("removeChecklistItem : ", e);
+            log.error("removeChecklistItem : ", e);
         }
         return result > 0;
     }

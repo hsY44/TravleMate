@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions"%>
 <c:set var="activePage" value="faqs"/>
 
 <!DOCTYPE html>
@@ -58,7 +59,11 @@
                                 <td class="px-4 py-3 whitespace-nowrap">${f.createDt}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex gap-1.5">
-                                        <button onclick="openEditModal(${f.faqNo}, '${f.faqTypeCd}', '${f.faqQuestion.replace("'","\\'")}', '${f.faqAnswer.replace("'","\\'")}' )"
+                                        <button onclick="openEditModalFromBtn(this)"
+                                                data-faq-no="${f.faqNo}"
+                                                data-faq-type="${f.faqTypeCd}"
+                                                data-faq-question="${fn:escapeXml(f.faqQuestion)}"
+                                                data-faq-answer="${fn:escapeXml(f.faqAnswer)}"
                                                 class="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-200">
                                             수정
                                         </button>
@@ -148,7 +153,17 @@
 <script src="${pageContext.request.contextPath}/dist/js/common.js"></script>
 <script>
 	let editMode = false;
-	
+
+	function openEditModalFromBtn(btn)
+	{
+	    openEditModal(
+	        btn.dataset.faqNo,
+	        btn.dataset.faqType,
+	        btn.dataset.faqQuestion,
+	        btn.dataset.faqAnswer
+	    );
+	}
+
 	function openWriteModal()
 	{
 	    editMode = false;

@@ -35,6 +35,61 @@ public class TravelService
         return travelMapper.selectPlansByMemberNo(memberNo);
     }
 
+    public PlanVo getPlanDetail(Long planNo)
+    {
+        return travelMapper.selectPlanDetail(planNo);
+    }
+
+    public List<PlanVo> getMyPlans(Long memberNo, String theme, String startDate, String endDate)
+    {
+        return travelMapper.selectMyPlans(memberNo, theme, startDate, endDate);
+    }
+
+    public List<PlanVo> getJoinedPlans(Long memberNo, String theme, String startDate, String endDate)
+    {
+        return travelMapper.selectJoinedPlans(memberNo, theme, startDate, endDate);
+    }
+
+    public List<String> getThemeNames()
+    {
+        return travelMapper.selectThemeNames();
+    }
+
+    public int countHostPlans(Long memberNo)
+    {
+        return travelMapper.countHostPlans(memberNo);
+    }
+
+    public int checkDateOverlap(Long memberNo, String startDt, String endDt, Long excludePlanNo)
+    {
+        return travelMapper.checkDateOverlap(memberNo, startDt, endDt, excludePlanNo);
+    }
+
+    public Long getPlanNoByInviteCode(String inviteCode)
+    {
+        return travelMapper.selectPlanNoByInviteCode(inviteCode);
+    }
+
+    public int planGuestExists(Long planNo, Long memberNo)
+    {
+        return travelMapper.selectPlanGuestExists(planNo, memberNo);
+    }
+
+    public int countActiveGuests(Long planNo)
+    {
+        return travelMapper.countActiveGuests(planNo);
+    }
+
+    public int updatePlanVisibility(Long planNo, Long hostMemberNo, int isPublic)
+    {
+        return travelMapper.updatePlanVisibility(planNo, hostMemberNo, isPublic);
+    }
+
+    public int updateGuestPermission(Long planNo, Long memberNo, int canEdit)
+    {
+        return travelMapper.updateGuestPermission(planNo, memberNo, canEdit);
+    }
+
     /* ----------------------------------------
        계획 생성 / 수정 / 삭제
     ---------------------------------------- */

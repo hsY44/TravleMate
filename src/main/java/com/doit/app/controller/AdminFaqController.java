@@ -61,8 +61,13 @@ public class AdminFaqController
                                                            HttpSession session)
     {
         if (!isAdminLoggedIn(session)) { return ResponseEntity.status(401).body(Map.of("result", "unauthorized")); }
-        int rows = adminFaqService.addFaqType(vo);
-        return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+        try {
+            int rows = adminFaqService.addFaqType(vo);
+            return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+        } catch (Exception e) {
+            log.error("addFaqType : ", e);
+            return ResponseEntity.internalServerError().body(Map.of("result", "error"));
+        }
     }
 
     // PUT /admin/faqType/{cd} - 카테고리 이름 수정 (AJAX)
@@ -73,9 +78,14 @@ public class AdminFaqController
                                                             HttpSession session)
     {
         if (!isAdminLoggedIn(session)) { return ResponseEntity.status(401).body(Map.of("result", "unauthorized")); }
-        vo.setFaqTypeCd(cd);
-        int rows = adminFaqService.editFaqType(vo);
-        return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+        try {
+            vo.setFaqTypeCd(cd);
+            int rows = adminFaqService.editFaqType(vo);
+            return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+        } catch (Exception e) {
+            log.error("editFaqType : ", e);
+            return ResponseEntity.internalServerError().body(Map.of("result", "error"));
+        }
     }
 
 
@@ -104,13 +114,18 @@ public class AdminFaqController
                                                        HttpSession session)
     {
         if (!isAdminLoggedIn(session)) { return ResponseEntity.status(401).body(Map.of("result", "unauthorized")); }
-        int rows = adminFaqService.addFaq(
-            adminNo(session),
-            body.get("faqTypeCd"),
-            body.get("faqQuestion"),
-            body.get("faqAnswer")
-        );
-        return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+        try {
+            int rows = adminFaqService.addFaq(
+                adminNo(session),
+                body.get("faqTypeCd"),
+                body.get("faqQuestion"),
+                body.get("faqAnswer")
+            );
+            return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+        } catch (Exception e) {
+            log.error("addFaq : ", e);
+            return ResponseEntity.internalServerError().body(Map.of("result", "error"));
+        }
     }
 
     // PUT /admin/faq/{faqNo} - 수정
@@ -121,13 +136,18 @@ public class AdminFaqController
                                                         HttpSession session)
     {
         if (!isAdminLoggedIn(session)) { return ResponseEntity.status(401).body(Map.of("result", "unauthorized")); }
-        int rows = adminFaqService.editFaq(
-            faqNo,
-            body.get("faqTypeCd"),
-            body.get("faqQuestion"),
-            body.get("faqAnswer")
-        );
-        return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+        try {
+            int rows = adminFaqService.editFaq(
+                faqNo,
+                body.get("faqTypeCd"),
+                body.get("faqQuestion"),
+                body.get("faqAnswer")
+            );
+            return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+        } catch (Exception e) {
+            log.error("editFaq : ", e);
+            return ResponseEntity.internalServerError().body(Map.of("result", "error"));
+        }
     }
 
     // DELETE /admin/faq/{faqNo} - 삭제
@@ -137,7 +157,12 @@ public class AdminFaqController
                                                           HttpSession session)
     {
         if (!isAdminLoggedIn(session)) { return ResponseEntity.status(401).body(Map.of("result", "unauthorized")); }
-        int rows = adminFaqService.removeFaq(faqNo);
-        return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+        try {
+            int rows = adminFaqService.removeFaq(faqNo);
+            return ResponseEntity.ok(Map.of("result", rows > 0 ? "ok" : "fail"));
+        } catch (Exception e) {
+            log.error("deleteFaq : ", e);
+            return ResponseEntity.internalServerError().body(Map.of("result", "error"));
+        }
     }
 }

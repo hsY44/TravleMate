@@ -61,8 +61,8 @@ async function submitQnaForm()
     const qnaTitle   = document.getElementById('qnaTitle').value.trim();
     const qnaContent = document.getElementById('qnaContent').value.trim();
 
-    if (!qnaTitle)   { showToast('문의 제목을 입력해주세요.', 'error'); return; }
-    if (!qnaContent) { showToast('문의 내용을 입력해주세요.', 'error'); return; }
+    if (!qnaTitle)   { showToast('문의 제목을 입력해주세요.', 2000, 'error'); return; }
+    if (!qnaContent) { showToast('문의 내용을 입력해주세요.', 2000, 'error'); return; }
 
     try
     {
@@ -76,7 +76,7 @@ async function submitQnaForm()
     }
     catch (e)
     {
-        showToast('문의 등록 중 오류가 발생했습니다.', 'error');
+        showToast('문의 등록 중 오류가 발생했습니다.', 2000, 'error');
     }
 }
 </script>

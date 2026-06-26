@@ -220,7 +220,9 @@
                                         class="rounded-lg border px-2 py-1 text-xs font-semibold transition ${g.canEdit ? 'border-sky-200 text-sky-500 hover:bg-sky-50' : 'border-slate-200 text-slate-400 hover:bg-slate-50'}">
                                     ${g.canEdit ? '편집 가능' : '읽기 전용'}
                                 </button>
-                                <button onclick="kickGuest(${g.memberId}, '${g.nickname}')"
+                                <button onclick="kickGuestFromBtn(this)"
+                                        data-member-id="${g.memberId}"
+                                        data-nickname="${fn:escapeXml(g.nickname)}"
                                         class="text-xs text-red-400 hover:text-red-600 font-semibold">내보내기</button>
                             </div>
                         </c:if>
@@ -479,7 +481,9 @@
                 <div class="flex flex-col gap-2 max-h-64 overflow-y-auto">
                     <c:forEach var="g" items="${guests}">
                         <c:if test="${not g.host}">
-                            <button onclick="transferHost(${g.memberId}, '${g.nickname}')"
+                            <button onclick="transferHostFromBtn(this)"
+                                    data-member-id="${g.memberId}"
+                                    data-nickname="${fn:escapeXml(g.nickname)}"
                                     class="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:bg-slate-50 transition">
                                 <div class="flex items-center gap-3">
                                     <div class="flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-sm font-bold text-sky-600">
@@ -526,10 +530,18 @@ const planId        = ${plan.id};
 const isHost        = ${isHost};
 const canEdit       = ${canEdit};
 const memberNo      = ${memberNo};
-const inviteCode    = '${plan.inviteCode}';
+let inviteCode      = '${plan.inviteCode}';
 const planStartDate = '${plan.startDate}';
 const costLabels = [<c:forEach var="cost" items="${costSummary}" varStatus="s">'${cost.category}'<c:if test="${!s.last}">,</c:if></c:forEach>];
 const costData   = [<c:forEach var="cost" items="${costSummary}" varStatus="s">${cost.total}<c:if test="${!s.last}">,</c:if></c:forEach>];
+
+function kickGuestFromBtn(btn) {
+    kickGuest(btn.dataset.memberId, btn.dataset.nickname);
+}
+
+function transferHostFromBtn(btn) {
+    transferHost(btn.dataset.memberId, btn.dataset.nickname);
+}
 </script>
 <script src="${ctx}/dist/js/common.js"></script>
 <script src="${ctx}/dist/js/planDetail.js"></script>

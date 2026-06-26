@@ -10,10 +10,9 @@
 <%@ include file="/WEB-INF/views/common/head.jsp" %>
 <title>트래블메이트 — ${content.title}</title>
 <link rel="stylesheet" href="${ctx}/dist/css/user.css">
-<script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
 <script type="text/javascript">
 
-	$(function() {
+	document.addEventListener('DOMContentLoaded', function() {
 		getReviewList(0);
 	});
 
@@ -31,7 +30,7 @@
                 showToast('리뷰를 불러오는 데 실패했습니다.', 2000, 'error');
             }
         } catch (error) {
-            console.error("네트워크 에러 발생:", error);
+            showToast('리뷰를 불러오는 데 실패했습니다.', 2000, 'error');
         }
     }
 
@@ -253,7 +252,10 @@
                                         </option>
                                     </c:forEach>
                                 </select>
-                                <button onclick="addToPlan(${p.id}, ${contentId}, '${content.title}')"
+                                <button onclick="addToPlanFromBtn(this)"
+                                        data-plan-id="${p.id}"
+                                        data-content-id="${content.contentId}"
+                                        data-title="${fn:escapeXml(content.title)}"
                                         class="flex items-center gap-1.5 rounded-xl bg-sky-500 px-4 py-2.5 font-semibold text-white transition hover:bg-sky-600">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5">
                                         <path d="M5 12h14"></path>
@@ -289,6 +291,10 @@
 <script>
 const ctx = '${ctx}';
 const contentId = ${content.contentId};
+
+function addToPlanFromBtn(btn) {
+    addToPlan(btn.dataset.planId, btn.dataset.contentId, btn.dataset.title);
+}
 </script>
 <script src="${ctx}/dist/js/common.js"></script>
 <script src="${ctx}/dist/js/contentDetail.js"></script>

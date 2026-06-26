@@ -31,7 +31,7 @@ public class AdminContentServiceImpl implements AdminContentService {
         try {
             result = mapper.dataCount(map);
         } catch (Exception e) {
-            log.info("dataCount : ", e);
+            log.error("dataCount : ", e);
         }
 
 		return result;
@@ -50,7 +50,7 @@ public class AdminContentServiceImpl implements AdminContentService {
 		try {
 			list = mapper.listContent(map);
 		} catch (Exception e) {
-			log.info("listContent : ", e);
+			log.error("listContent : ", e);
 		}
 		
 		return list;
@@ -68,7 +68,7 @@ public class AdminContentServiceImpl implements AdminContentService {
 		try {
 			list = mapper.listCategory();
 		} catch (Exception e) {
-			log.info("listCategory : ", e);
+			log.error("listCategory : ", e);
 		}
 		
 		return list;
@@ -89,7 +89,7 @@ public class AdminContentServiceImpl implements AdminContentService {
         try {
             content = mapper.selectContentDetail(contentId);
         } catch (Exception e) {
-            log.info("contentDetail : ", e);
+            log.error("contentDetail : ", e);
         }
 
         return content;
@@ -106,7 +106,7 @@ public class AdminContentServiceImpl implements AdminContentService {
         try {
             images = mapper.selectContentImages(contentId);
         } catch (Exception e) {
-            log.info("getContentImages : ", e);
+            log.error("getContentImages : ", e);
         }
         return images;
     }

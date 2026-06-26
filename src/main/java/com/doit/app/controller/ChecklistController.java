@@ -77,7 +77,7 @@ public class ChecklistController
         try {
             return ResponseEntity.ok(checklistService.getChecklistItems(planNo));
         } catch (Exception e) {
-            log.info("getChecklist : ", e);
+            log.error("getChecklist : ", e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -107,7 +107,7 @@ public class ChecklistController
             checklistService.addChecklistItem(planNo, content.trim());
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            log.info("addChecklistItem : ", e);
+            log.error("addChecklistItem : ", e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -144,7 +144,7 @@ public class ChecklistController
             return updated ? ResponseEntity.ok().build()
                            : ResponseEntity.notFound().build();
         } catch (Exception e) {
-            log.info("updateChecklistItem : ", e);
+            log.error("updateChecklistItem : ", e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -170,7 +170,7 @@ public class ChecklistController
             return deleted ? ResponseEntity.ok().build()
                            : ResponseEntity.notFound().build();
         } catch (Exception e) {
-            log.info("deleteChecklistItem : ", e);
+            log.error("deleteChecklistItem : ", e);
             return ResponseEntity.internalServerError().build();
         }
     }

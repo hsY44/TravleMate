@@ -32,7 +32,7 @@ public class ContentReviewServiceImpl implements ContentReviewService
         try {
             result = mapper.selectReviewCount(contentId);
         } catch (Exception e) {
-            log.info("getReviewCount : ", e);
+            log.error("getReviewCount : ", e);
         }
         return result;
     }
@@ -45,7 +45,7 @@ public class ContentReviewServiceImpl implements ContentReviewService
         try {
             list = mapper.selectReviews(map);
         } catch (Exception e) {
-            log.info("listContentReview : ", e);
+            log.error("listContentReview : ", e);
         }
         return list;
     }
@@ -61,7 +61,7 @@ public class ContentReviewServiceImpl implements ContentReviewService
             mapper.insertReview(reviewVo);
             return true;
         } catch (Exception e) {
-            log.info("addReview : ", e);
+            log.error("addReview : ", e);
             return false;
         }
     }
@@ -76,7 +76,7 @@ public class ContentReviewServiceImpl implements ContentReviewService
             mapper.updateReview(reviewVo);
             return true;
         } catch (Exception e) {
-            log.info("editReview : ", e);
+            log.error("editReview : ", e);
             return false;
         }
     }
@@ -91,7 +91,7 @@ public class ContentReviewServiceImpl implements ContentReviewService
             mapper.deleteReview(reviewNo, memberNo);
             return true;
         } catch (Exception e) {
-            log.info("removeReview : ", e);
+            log.error("removeReview : ", e);
             return false;
         }
     }

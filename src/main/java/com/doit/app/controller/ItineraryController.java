@@ -81,7 +81,7 @@ public class ItineraryController
             }
             return ResponseEntity.ok(sc);
         } catch (Exception e) {
-            log.info("getSchedule : ", e);
+            log.error("getSchedule : ", e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -222,14 +222,14 @@ public class ItineraryController
     public String actionTypePage(Model model, HttpSession session)
     {
         if (!isAdminLoggedIn(session)) {
-            return "redirect:/admin/login";
+            return "redirect:/login";
         }
 
         try {
             List<ActionTypeVo> types = itineraryService.getAllActionTypes();
             model.addAttribute("actionTypes", types);
         } catch (Exception e) {
-            log.info("actionTypePage : ", e);
+            log.error("actionTypePage : ", e);
         }
 
         return "admin/itineraryActionType";
@@ -256,7 +256,7 @@ public class ItineraryController
             itineraryService.saveActionType(cd.trim(), nm.trim());
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            log.info("saveActionType : ", e);
+            log.error("saveActionType : ", e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -264,6 +264,7 @@ public class ItineraryController
 
     /**
      * PUT /admin/itineraryActionType/{cd}
+
      * - 편집 종류 이름 수정
      * - 요청 파라미터: nm
      * - 응답: 200 OK (AJAX)
@@ -282,7 +283,7 @@ public class ItineraryController
             itineraryService.saveActionType(cd.trim(), nm.trim());
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            log.info("updateActionType : ", e);
+            log.error("updateActionType : ", e);
             return ResponseEntity.internalServerError().build();
         }
     }

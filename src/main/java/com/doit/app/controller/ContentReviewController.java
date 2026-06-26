@@ -69,7 +69,7 @@ public class ContentReviewController
 
             return ApiResponse.success(response);
 		} catch (Exception e) {
-            log.info("listContentReview : ", e);
+            log.error("listContentReview : ", e);
 		}
 
         return ApiResponse.fail(500, "실패");
@@ -92,11 +92,15 @@ public class ContentReviewController
         if (loginMember == null)
             return ResponseEntity.status(401).build();
 
+        Object ratingRaw = body.get("rating");
+        if (ratingRaw == null)
+            return ResponseEntity.badRequest().body(Map.of("msg", "rating 은 필수입니다."));
+
         ReviewVo vo = new ReviewVo();
         vo.setContentId(contentId);
         vo.setMemberNo(loginMember.getMemberNo());
         vo.setReviewComment((String) body.get("content"));
-        vo.setRating(Integer.parseInt(body.get("rating").toString()));
+        vo.setRating(Integer.parseInt(ratingRaw.toString()));
 
         // 주 1회 제한 확인 - false: 이번 주 이미 작성
         boolean added = service.addReview(vo);

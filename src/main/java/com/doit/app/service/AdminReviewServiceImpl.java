@@ -26,7 +26,7 @@ public class AdminReviewServiceImpl implements AdminReviewService {
 		try {
 			result = mapper.selectReviewCount(map);
 		} catch (Exception e) {
-			log.info("getReviewCount : ", e);
+			log.error("getReviewCount : ", e);
 		}
 		
 		return result;
@@ -41,7 +41,7 @@ public class AdminReviewServiceImpl implements AdminReviewService {
 		try {
 			list = mapper.selectReviews(map);
 		} catch (Exception e) {
-			log.info("listContentReview : ", e);
+			log.error("listContentReview : ", e);
 		}
 		
 		return list;
@@ -53,7 +53,7 @@ public class AdminReviewServiceImpl implements AdminReviewService {
         try {
             result = mapper.updateReviewBlind(reviewNo);
         } catch (Exception e) {
-            log.info("updateReviewBlind : ", e);
+            log.error("updateReviewBlind : ", e);
         }
         return result;
     }

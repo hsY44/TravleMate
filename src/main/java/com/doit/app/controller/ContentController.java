@@ -10,8 +10,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.doit.app.domain.*;
-import com.doit.app.mapper.TravelMapper;
 import com.doit.app.service.ReviewReportService;
+import com.doit.app.service.TravelService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,7 +33,7 @@ public class ContentController
 {
 	private final ContentService service;
     private final ReviewReportService reportService;
-    private final TravelMapper travelMapper;
+    private final TravelService travelService;
 
     /**
      * GET /contents/search?kwd=검색어&category=39&addr=서울
@@ -64,6 +64,8 @@ public class ContentController
                     m.put("firstImage",    c.getFirstImage());
                     m.put("contentTypeId", c.getContentTypeId());
                     m.put("contentDiv",    c.getContentDiv());
+                    m.put("mapX",          c.getMapX());
+                    m.put("mapY",          c.getMapY());
                     return m;
                 })
                 .collect(Collectors.toList());
@@ -78,8 +80,8 @@ public class ContentController
     		, @RequestParam(name = "kwd", defaultValue = "") String kwd
     		, HttpSession session
     		, Model model
-    		, HttpServletRequest req) throws Exception {
-    	
+    		, HttpServletRequest req) {
+
     	try {
 
     		// 3 * 3 카드 형식이라서 9로 설정
@@ -94,11 +96,7 @@ public class ContentController
 			
 			// 로그인되었을 경우 session 에서 memberNo 가져오기
     		MemberVo loginMember = (MemberVo) session.getAttribute("loginMember");
-    		Long memberNo = null;
-    		if (loginMember != null && loginMember.getMemberNo() != null) {
-    			memberNo = loginMember.getMemberNo();
-    		}
-            session.setAttribute("memberNo", memberNo);
+    		Long memberNo = (loginMember != null) ? loginMember.getMemberNo() : null;
     		map.put("memberNo", memberNo);
 			
 			map.put("category", category);		// 카테고리
@@ -128,13 +126,14 @@ public class ContentController
 
 			if (!category.isBlank() && !category.equals("all")) {
 				query = "category=" + category;
-				query = listUrl.contains("?") ? "&" : "?" + query;
 			}
 			if (!kwd.isBlank()) {
-				query += query.contains("?") ? "&" : "?";
+				query += query.isEmpty() ? "" : "&";
 				query += "kwd=" + URLEncoder.encode(kwd, "UTF-8");
 			}
-			listUrl += query;
+			if (!query.isEmpty()) {
+				listUrl += "?" + query;
+			}
 
 			model.addAttribute("contentList", contentList);
 			model.addAttribute("cateList", cateList);
@@ -144,15 +143,14 @@ public class ContentController
 			model.addAttribute("size", size);
 			model.addAttribute("totalPage", totalPage);
 			
-			model.addAttribute("listUrl", listUrl);
+			model.addAttribute("listUrl",   listUrl);
 			model.addAttribute("category", category);
-			model.addAttribute("kwd", kwd);
-			model.addAttribute("query", query);
+			model.addAttribute("kwd",      kwd);
+			model.addAttribute("query",    query);
 			
 
 		} catch (Exception e) {
-			log.info("contents/list : ", e);
-			throw e;
+			log.error("contents/list : ", e);
 		}
     	
         return "user/content/list";
@@ -185,12 +183,8 @@ public class ContentController
         	
 			// 로그인되었을 경우 session 에서 memberNo 가져오기
     		MemberVo loginMember = (MemberVo) session.getAttribute("loginMember");
-    		Long memberNo = null;
-    		if (loginMember != null && loginMember.getMemberNo() != null) {
-    			memberNo = loginMember.getMemberNo();
-    		}
-            session.setAttribute("memberNo", memberNo);
-        	
+    		Long memberNo = (loginMember != null) ? loginMember.getMemberNo() : null;
+
             ContentVO content = service.getContentDetail(contentId, memberNo);
 
             List<ContentImageVO> images = service.getContentImages(contentId);
@@ -203,7 +197,7 @@ public class ContentController
 
             // 로그인 회원의 여행 계획 목록
             if (loginMember != null) {
-                List<PlanVo> myPlans = travelMapper.selectMyPlans(memberNo, null, null, null);
+                List<PlanVo> myPlans = travelService.getMyPlans(memberNo, null, null, null);
 
                 List<Map<String, Object>> planList = new ArrayList<>();
 
@@ -228,7 +222,7 @@ public class ContentController
 			model.addAttribute("query", query);
 
         } catch (Exception e) {
-            log.info("contents detail : ", e);
+            log.error("contents detail : ", e);
         }
 
         return "user/content/contentDetail";

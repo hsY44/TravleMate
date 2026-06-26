@@ -69,8 +69,13 @@ public class MemberController
     @ResponseBody
     public ResponseEntity<Map<String, Object>> register(@RequestBody MemberVo memberVo)
     {
-        memberService.register(memberVo);
-        return ResponseEntity.ok(Map.of("result", "ok"));
+        try {
+            memberService.register(memberVo);
+            return ResponseEntity.ok(Map.of("result", "ok"));
+        } catch (Exception e) {
+            log.error("register : ", e);
+            return ResponseEntity.internalServerError().body(Map.of("result", "error"));
+        }
     }
 
 

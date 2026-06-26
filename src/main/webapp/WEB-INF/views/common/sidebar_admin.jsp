@@ -32,11 +32,6 @@
                ${activePage eq 'review' ? 'bg-sky-500 text-white' : 'text-slate-300 hover:bg-slate-700'}">
             <i data-lucide="pencil" class="h-5 w-5"></i> 리뷰내역
         </a>
-        <a href="${ctx}/admin/reports"
-           class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition
-               ${activePage eq 'reports' ? 'bg-sky-500 text-white' : 'text-slate-300 hover:bg-slate-700'}">
-            <i data-lucide="siren" class="h-5 w-5"></i> 신고내역
-        </a>
         <a href="${ctx}/admin/notices"
            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition
                ${activePage eq 'notices' ? 'bg-sky-500 text-white' : 'text-slate-300 hover:bg-slate-700'}">

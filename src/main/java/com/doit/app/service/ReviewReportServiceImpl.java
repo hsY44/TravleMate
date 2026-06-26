@@ -26,7 +26,7 @@ public class ReviewReportServiceImpl implements ReviewReportService {
         try {
             list = mapper.selectReviewReportType();
         } catch (Exception e) {
-            log.info("getReviewReportType : ", e);
+            log.error("getReviewReportType : ", e);
         }
         return list;
     }
@@ -40,7 +40,7 @@ public class ReviewReportServiceImpl implements ReviewReportService {
             result = mapper.insertReviewReport(reviewReport);
             reviewMapper.updateReviewBlind(reviewReport.getContentReviewNo());
         }  catch (Exception e) {
-            log.info("addReviewReport : ", e);
+            log.error("addReviewReport : ", e);
         }
         return result;
     }

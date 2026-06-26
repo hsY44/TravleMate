@@ -51,8 +51,13 @@ public class AdminThemeController
         if (!isAdminLoggedIn(session)) {
             return ResponseEntity.status(401).body(Map.of("result", "unauthorized"));
         }
-        adminThemeService.saveTheme(cd.trim().toUpperCase(), nm.trim());
-        return ResponseEntity.ok(Map.of("result", "ok"));
+        try {
+            adminThemeService.saveTheme(cd.trim().toUpperCase(), nm.trim());
+            return ResponseEntity.ok(Map.of("result", "ok"));
+        } catch (Exception e) {
+            log.error("addTheme : ", e);
+            return ResponseEntity.internalServerError().body(Map.of("result", "error"));
+        }
     }
 
     // PUT /admin/theme/{cd} - 수정 (AJAX)
@@ -65,8 +70,13 @@ public class AdminThemeController
         if (!isAdminLoggedIn(session)) {
             return ResponseEntity.status(401).body(Map.of("result", "unauthorized"));
         }
-        adminThemeService.saveTheme(cd.trim(), nm.trim());
-        return ResponseEntity.ok(Map.of("result", "ok"));
+        try {
+            adminThemeService.saveTheme(cd.trim(), nm.trim());
+            return ResponseEntity.ok(Map.of("result", "ok"));
+        } catch (Exception e) {
+            log.error("editTheme : ", e);
+            return ResponseEntity.internalServerError().body(Map.of("result", "error"));
+        }
     }
 
     // DELETE /admin/theme/{cd} - 삭제 (AJAX)
@@ -78,11 +88,16 @@ public class AdminThemeController
         if (!isAdminLoggedIn(session)) {
             return ResponseEntity.status(401).body(Map.of("result", "unauthorized"));
         }
-        String result = adminThemeService.deleteTheme(cd.trim());
-        // INUSE: 여행계획에서 사용 중 → 409 Conflict
-        if ("INUSE".equals(result)) {
-            return ResponseEntity.status(409).body(Map.of("result", "inuse"));
+        try {
+            String result = adminThemeService.deleteTheme(cd.trim());
+            // INUSE: 여행계획에서 사용 중 → 409 Conflict
+            if ("INUSE".equals(result)) {
+                return ResponseEntity.status(409).body(Map.of("result", "inuse"));
+            }
+            return ResponseEntity.ok(Map.of("result", "ok"));
+        } catch (Exception e) {
+            log.error("deleteTheme : ", e);
+            return ResponseEntity.internalServerError().body(Map.of("result", "error"));
         }
-        return ResponseEntity.ok(Map.of("result", "ok"));
     }
 }

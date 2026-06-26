@@ -37,7 +37,7 @@ public class AdminReviewController {
             , @RequestParam(name = "kwd", defaultValue = "") String kwd
             , HttpSession session
             , Model model
-            , HttpServletRequest req) throws Exception {
+            , HttpServletRequest req) {
 
         try {
             if (!isAdminLoggedIn(session)) { return "redirect:/login"; }
@@ -93,8 +93,7 @@ public class AdminReviewController {
             model.addAttribute("kwd", kwd);
             model.addAttribute("query", query);
         } catch (Exception e) {
-            log.info("admin/contents : ", e);
-            throw e;
+            log.error("admin/contents : ", e);
         }
 
         return "admin/reviews";
