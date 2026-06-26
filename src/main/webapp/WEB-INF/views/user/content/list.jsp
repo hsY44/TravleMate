@@ -11,7 +11,6 @@
 <%@ include file="/WEB-INF/views/common/head.jsp"%>
 <title>트래블메이트 — 여행지 탐색</title>
 <link rel="stylesheet" href="${ctx}/dist/css/user.css">
-<script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
 <script type="text/javascript">
 
 	function searchContent() {

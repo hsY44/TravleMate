@@ -1,18 +1,8 @@
 /*===============================================
     TravelController.java
-    - 여행 계획 컨트롤러
-    - GET    /plans                                 : 계획 목록 페이지
-    - POST   /plans                                 : 새 계획 생성
-    - GET    /plans/{planNo}                        : 계획 상세 페이지
-    - PUT    /plans/{planNo}                        : 계획 수정 (호스트)
-    - DELETE /plans/{planNo}                        : 계획 삭제 (호스트)
-    - POST   /plans/join                            : 초대코드로 계획 참여
-    - DELETE /plans/{planNo}/guest/{memberId}       : 게스트 내보내기 (호스트)
-    - POST   /plans/{planNo}/invite/member          : 직접 초대 전송 (호스트)
-    - POST   /invitations/{invitationNo}/accept     : 초대 수락
-    - POST   /invitations/{invitationNo}/decline    : 초대 거절
-    - PUT    /plans/{planNo}/guest/{memberId}/permission : 게스트 편집 권한 변경 (호스트)
-    - PUT    /plans/{planNo}/visibility                 : 공개/비공개 설정 변경 (호스트)
+    - 여행 계획 CRUD 및 참여자 관리 컨트롤러
+    - 계획 생성/조회/수정/삭제, 초대코드 참여,
+      게스트 내보내기/권한 변경, 호스트 위임
 ===============================================*/
 package com.doit.app.controller;
 

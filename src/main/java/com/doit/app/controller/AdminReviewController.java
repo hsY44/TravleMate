@@ -30,9 +30,9 @@ public class AdminReviewController {
         return session.getAttribute("loginAdmin") != null;
     }
 
-     // 관리자 컨텐츠 목록 페이지
+     // 관리자 리뷰 목록 페이지
     @GetMapping("/admin/reviews")
-    public String adminListContent(@RequestParam(name = "page", defaultValue = "1") int currentPage
+    public String adminListReviews(@RequestParam(name = "page", defaultValue = "1") int currentPage
             , @RequestParam(name = "schType", defaultValue = "none") String schType
             , @RequestParam(name = "kwd", defaultValue = "") String kwd
             , HttpSession session
