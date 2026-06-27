@@ -72,7 +72,7 @@ public class KakaoLocalService
             return result;
 
         } catch (Exception e) {
-            log.info("Kakao Local API 호출 실패 : ", e);
+            log.warn("Kakao Local API 호출 실패 : ", e);
             return List.of();
         }
     }

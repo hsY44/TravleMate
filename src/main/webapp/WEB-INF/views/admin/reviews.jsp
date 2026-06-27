@@ -79,7 +79,7 @@
                 </div>
             </form>
 
-            <!-- 신고 목록 테이블 -->
+            <!-- 리뷰 목록 테이블 -->
             <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <table class="admin-table">
                     <thead>
@@ -115,10 +115,9 @@
                                 </td>
                             </tr>
                         </c:forEach>
-                        <!-- 신고 내역 없음 -->
                         <c:if test="${empty reviewList}">
                             <tr>
-                                <td colspan="7" class="py-10 text-center text-slate-400">신고 내역이 없습니다.</td>
+                                <td colspan="7" class="py-10 text-center text-slate-400">리뷰 내역이 없습니다.</td>
                             </tr>
                         </c:if>
                     </tbody>

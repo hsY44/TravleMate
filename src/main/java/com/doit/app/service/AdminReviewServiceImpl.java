@@ -3,7 +3,6 @@ package com.doit.app.service;
 import com.doit.app.common.PaginateUtil;
 import com.doit.app.domain.ReviewVo;
 import com.doit.app.mapper.AdminReviewMapper;
-import com.doit.app.mapper.ContentReviewMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

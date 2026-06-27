@@ -302,7 +302,6 @@
         <div class="flex flex-col gap-3">
             <div>
                 <label class="mb-1.5 block text-sm font-semibold text-slate-900">카테고리</label>
-                <!-- inquiryCategories: Task 8 에서 Controller → Model 에 담을 QNA_TYPE 목록 -->
                 <select id="inqCategory"
                         class="w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-400">
                     <c:forEach var="cat" items="${inquiryCategories}">

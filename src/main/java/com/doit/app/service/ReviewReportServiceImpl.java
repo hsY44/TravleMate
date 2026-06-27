@@ -32,6 +32,9 @@ public class ReviewReportServiceImpl implements ReviewReportService {
     }
 
     // 리뷰 신고 등록
+    // 1. REVIEW_REPORT INSERT
+    // 2. CONTENT_REVIEW BLIND_YN 'N' → 'Y' (블라인드 처리)
+    // ※ 두 작업이 원자적이어야 하므로 예외 발생 시 re-throw → @Transactional 롤백 보장
     @Transactional
     @Override
     public int addReviewReport(ReviewReportVO reviewReport) {
@@ -41,6 +44,7 @@ public class ReviewReportServiceImpl implements ReviewReportService {
             reviewMapper.updateReviewBlind(reviewReport.getContentReviewNo());
         }  catch (Exception e) {
             log.error("addReviewReport : ", e);
+            throw e;
         }
         return result;
     }

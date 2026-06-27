@@ -89,6 +89,11 @@ public class ItineraryService
         return itineraryMapper.selectSchedule(no, planNo);
     }
 
+    // 일정 추가
+    // 1. 편집 가능 기간 검사 (잠금이면 RuntimeException)
+    // 2. TRAVEL_ITINERARY INSERT
+    // 3. 비용이 있으면 ITINERARY_EXPENSE INSERT
+    // 4. 이력 "생성" 기록
     @Transactional
     public void addSchedule(ScheduleVo sc, long cost, String costCategory, Long planGuestNo) {
         // 편집 가능 기간이 아니면 RuntimeException - 컨트롤러에서 catch 후 423 반환
@@ -101,6 +106,11 @@ public class ItineraryService
         itineraryMapper.insertHistory(sc.getPlanNo(), sc.getId(), "생성", planGuestNo, buildCreateSummary(sc, cost));
     }
 
+    // 일정 수정
+    // 1. 편집 가능 기간 검사 (잠금이면 RuntimeException)
+    // 2. 기존 비용 삭제 후 ITINERARY_EXPENSE 재삽입
+    // 3. TRAVEL_ITINERARY UPDATE
+    // 4. 이력 "수정" 기록 (변경 항목 요약)
     @Transactional
     public void editSchedule(ScheduleVo sc, long cost, String costCategory, Long planGuestNo) {
         // 편집 가능 기간이 아니면 RuntimeException - 컨트롤러에서 catch 후 423 반환
@@ -157,6 +167,11 @@ public class ItineraryService
 
     private String nvl(String s) { return s == null ? "" : s; }
 
+    // 일정 삭제 (소프트 삭제)
+    // 1. 편집 가능 기간 검사 (잠금이면 RuntimeException)
+    // 2. 이력 "삭제" 기록 (ITINERARY 존재 중에 먼저 기록)
+    // 3. TRAVEL_ITINERARY_DEL INSERT (소프트 삭제 마킹, ITINERARY 하드 삭제 안 함)
+    // 4. ITINERARY_EXPENSE 삭제
     @Transactional
     public void removeSchedule(Long no, Long planNo, Long planGuestNo) {
         // 편집 가능 기간이 아니면 RuntimeException - 컨트롤러에서 catch 후 423 반환
@@ -213,6 +228,8 @@ public class ItineraryService
         return itineraryMapper.selectAllActionTypes();
     }
 
+    // 편집 종류 등록/수정 (upsert)
+    // - 코드가 존재하면 UPDATE, 없으면 INSERT
     @Transactional
     public void saveActionType(String cd, String nm) {
         if (itineraryMapper.countActionType(cd) > 0) itineraryMapper.updateActionType(cd, nm);

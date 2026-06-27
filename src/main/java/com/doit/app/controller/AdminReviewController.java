@@ -93,7 +93,7 @@ public class AdminReviewController {
             model.addAttribute("kwd", kwd);
             model.addAttribute("query", query);
         } catch (Exception e) {
-            log.error("admin/contents : ", e);
+            log.error("adminListReviews : ", e);
         }
 
         return "admin/reviews";

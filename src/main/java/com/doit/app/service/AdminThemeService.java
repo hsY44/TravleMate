@@ -25,6 +25,8 @@ public class AdminThemeService
         return adminThemeMapper.selectAllThemes();
     }
 
+    // 테마 등록/수정 (upsert)
+    // - 코드가 존재하면 UPDATE, 없으면 INSERT
     @Transactional
     public void saveTheme(String cd, String nm)
     {

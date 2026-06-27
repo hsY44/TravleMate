@@ -43,6 +43,15 @@ function closeModal(id) {
     }
 }
 
+// ── 유틸 ──────────────────────────────────────────────────────────
+function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;');
+}
+
 // ── 리뷰 바인딩 ────────────────────────────────────────────────
 function renderReviewList(response) {
     const container = document.getElementById("reviewListContainer");
@@ -71,7 +80,7 @@ function renderReviewList(response) {
 
         // 데이터 바인딩 및 기본값
         const nickname = r.nickname || '익명';
-        const firstChar = nickname.charAt(0);
+        const firstChar = escHtml(nickname.charAt(0));
         const createdAt = r.createDt || '';
         const content = r.reviewComment || '내용이 없는 리뷰입니다.';
         const reviewId = r.contentReviewNo || 0;
@@ -98,7 +107,7 @@ function renderReviewList(response) {
                                 firstChar +
                             '</div>' +
                             '<div>' +
-                                '<span class="text-sm font-semibold text-slate-900">' + nickname + '</span>' +
+                                '<span class="text-sm font-semibold text-slate-900">' + escHtml(nickname) + '</span>' +
                                 '<div class="flex items-center gap-0.5" data-star="' + rating + '">' +
                                     starsHtml +
                                 '</div>' +
@@ -109,7 +118,7 @@ function renderReviewList(response) {
                             buttonsHtml +
                         '</div>' +
                     '</div>' +
-                    '<p class="text-sm text-slate-600">' + content + '</p>' +
+                    '<p class="text-sm text-slate-600">' + escHtml(content) + '</p>' +
                 '</div>';
     });
 

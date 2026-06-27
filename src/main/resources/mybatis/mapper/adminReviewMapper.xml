@@ -45,13 +45,13 @@
     <select id="selectReviews" parameterType="map" resultType="com.doit.app.domain.ReviewVo">
         SELECT CONTENT_REVIEW_NO as CONTENTREVIEWNO, CONTENTID
         , A.MEMBER_NO as MEMBERNO
-        , B.NICKNAME
+        , NVL(B.NICKNAME, '탈퇴한 회원') AS NICKNAME
         , REVIEW_COMMENT as REVIEWCOMMENT
         , RATING
         , TO_CHAR(A.CREATE_DT, 'YYYY-MM-DD') AS CREATEDT
         , BLIND_YN AS BLINDYN
         FROM CONTENT_REVIEW A
-        JOIN MEMBER_ACTIVE B ON A.MEMBER_NO = B.MEMBER_NO
+        LEFT JOIN MEMBER_ACTIVE B ON A.MEMBER_NO = B.MEMBER_NO
         <where>
             <if test="kwd != null and kwd != ''">
                 <include refid="where-list"/>

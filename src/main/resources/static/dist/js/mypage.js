@@ -6,7 +6,7 @@
 ===============================================*/
 
 /* ── 탭 전환 ── */
-// tab: 'profile' | 'favorites' | 'inquiries'
+// tab: 'profile' | 'favorites' | 'plans' | 'reviews' | 'inquiries'
 function switchMypageTab(tab)
 {
     // 탭 버튼 active 상태 전환 (data-mytab 속성 기준)
