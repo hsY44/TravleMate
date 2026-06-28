@@ -232,6 +232,7 @@ public class TravelService
                 // 혼자인 계획은 FK 순서대로 완전 삭제
                 travelMapper.deleteHistoryByPlanNo(planNo);
                 travelMapper.deleteExpenseByPlanNo(planNo);
+                travelMapper.deleteDelRecordByPlanNo(planNo);
                 travelMapper.deleteItineraryByPlanNo(planNo);
                 travelMapper.deletePlanGuestLeaveByPlanNo(planNo);
                 travelMapper.deletePlanGuestByPlanNo(planNo);
@@ -322,6 +323,7 @@ public class TravelService
     {
         travelMapper.deleteHistoryByPlanNo(planNo);
         travelMapper.deleteExpenseByPlanNo(planNo);
+        travelMapper.deleteDelRecordByPlanNo(planNo);
         travelMapper.deleteItineraryByPlanNo(planNo);
         travelMapper.deletePlanGuestLeaveByPlanNo(planNo);
         travelMapper.deletePlanGuestByPlanNo(planNo);

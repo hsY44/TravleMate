@@ -213,13 +213,13 @@
     <select id="selectHistory" resultType="com.doit.app.domain.HistoryVo">
         SELECT AT.ACTION_TYPE_NM                           AS type
              , TH.ITINERARY_NM                            AS target
-             , MA.NICKNAME                                AS editor
+             , NVL(MA.NICKNAME, '탈퇴한 회원')            AS editor
              , TO_CHAR(TH.EDIT_DT, 'YYYY-MM-DD HH24:MI') AS editedAt
           FROM TRAVEL_ITINERARY_HIST TH
           JOIN TRAVEL_ITINERARY      TI  ON TI.TRAVEL_ITINERARY_NO = TH.TRAVEL_ITINERARY_NO
           JOIN ACTION_TYPE           AT  ON AT.ACTION_TYPE_CD      = TH.ACTION_TYPE_CD
           JOIN PLAN_GUEST            PG  ON PG.PLAN_GUEST_NO       = TH.PLAN_GUEST_NO
-          JOIN MEMBER_ACTIVE         MA  ON MA.MEMBER_NO           = PG.MEMBER_NO
+          LEFT JOIN MEMBER_ACTIVE    MA  ON MA.MEMBER_NO           = PG.MEMBER_NO
          WHERE TI.TRAVEL_PLAN_NO = #{planNo}
          ORDER BY TH.EDIT_DT DESC
     </select>

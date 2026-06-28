@@ -334,6 +334,13 @@
                 WHERE TRAVEL_PLAN_NO = #{planNo})
     </delete>
 
+    <delete id="deleteDelRecordByPlanNo">
+        DELETE FROM TRAVEL_ITINERARY_DEL
+         WHERE TRAVEL_ITINERARY_NO IN (
+               SELECT TRAVEL_ITINERARY_NO FROM TRAVEL_ITINERARY
+                WHERE TRAVEL_PLAN_NO = #{planNo})
+    </delete>
+
     <delete id="deleteItineraryByPlanNo">
         DELETE FROM TRAVEL_ITINERARY WHERE TRAVEL_PLAN_NO = #{planNo}
     </delete>

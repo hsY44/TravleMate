@@ -158,9 +158,10 @@ public interface TravelMapper
        계획 삭제 (FK 순서 준수 필수)
     ---------------------------------------- */
 
-    /** 계획 삭제 관련 - FK 순서: 이력→비용→일정→게스트탈퇴→게스트→초대코드→계획 */
+    /** 계획 삭제 관련 - FK 순서: 이력→비용→소프트삭제이력→일정→게스트탈퇴→게스트→초대코드→계획 */
     void deleteHistoryByPlanNo(@Param("planNo") Long planNo);
     void deleteExpenseByPlanNo(@Param("planNo") Long planNo);
+    void deleteDelRecordByPlanNo(@Param("planNo") Long planNo);
     void deleteItineraryByPlanNo(@Param("planNo") Long planNo);
     void deletePlanGuestLeaveByPlanNo(@Param("planNo") Long planNo);
     void deletePlanGuestByPlanNo(@Param("planNo") Long planNo);
