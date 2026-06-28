@@ -41,6 +41,7 @@ async function fetchJSON(url, options = {}) {
     };
     const res = await fetch(url, { ...defaults, ...options });
     if (!res.ok) {
+        if (res.status === 401) { location.href = ctx + '/login'; return; }
         const text = await res.text().catch(() => '');
         throw new Error(text || res.status);
     }
