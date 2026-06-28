@@ -15,18 +15,18 @@ import java.util.List;
 public interface ChecklistMapper
 {
     // 계획 체크리스트 목록 조회 (등록일 오름차순)
-    List<ChecklistVo> selectChecklistItems(@Param("planNo") Long planNo) throws Exception;
+    List<ChecklistVo> selectChecklistItems(@Param("planNo") Long planNo);
 
     // 체크리스트 항목 추가
-    void insertChecklistItem(ChecklistVo vo) throws Exception;
+    void insertChecklistItem(ChecklistVo vo);
 
     // 체크리스트 항목 수정 (content / isChecked 중 전달된 것만 반영)
     int updateChecklistItem(@Param("no")          Long    no,
                             @Param("planNo")      Long    planNo,
                             @Param("content")     String  content,
-                            @Param("isChecked")   Integer isChecked) throws Exception;
+                            @Param("isChecked")   Integer isChecked);
 
     // 체크리스트 항목 삭제
     int deleteChecklistItem(@Param("no")     Long no,
-                            @Param("planNo") Long planNo) throws Exception;
+                            @Param("planNo") Long planNo);
 }

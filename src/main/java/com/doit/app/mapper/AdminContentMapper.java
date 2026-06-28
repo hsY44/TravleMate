@@ -1,3 +1,8 @@
+/*===============================================
+    AdminContentMapper.java
+    - 관리자 컨텐츠 관련 MyBatis Mapper 인터페이스
+    - adminContentMapper.xml 과 연결
+===============================================*/
 package com.doit.app.mapper;
 
 import com.doit.app.domain.ContentCategoryVO;
@@ -12,18 +17,17 @@ import java.util.Map;
 @Mapper
 public interface AdminContentMapper {
     // 데이터 개수
-    public int dataCount(Map<String, Object> map);
+    int dataCount(Map<String, Object> map);
 
     // 컨텐츠 목록
-    public List<ContentVO> listContent(Map<String, Object> map);
+    List<ContentVO> listContent(Map<String, Object> map);
 
     // 컨텐츠 카테고리 조회
-    public List<ContentCategoryVO> listCategory();
+    List<ContentCategoryVO> listCategory();
 
     // 컨텐츠 상세
     ContentVO selectContentDetail(@Param("contentId") Long contentId);
 
     // 컨텐츠 상세 - 컨텐츠 이미지들
-    public List<ContentImageVO> selectContentImages(Long contentId);
-
+    List<ContentImageVO> selectContentImages(Long contentId);
 }
