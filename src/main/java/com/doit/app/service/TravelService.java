@@ -138,11 +138,23 @@ public class TravelService
     public Long joinByInviteCode(String inviteCode, Long memberNo)
     {
         Long planNo = travelMapper.selectPlanNoByInviteCode(inviteCode);
-        if (planNo == null) {
-            return null;
-        }
+        if (planNo == null) return null;
+
         if (travelMapper.selectPlanGuestExists(planNo, memberNo) == 0) {
+            // 처음 참여
             travelMapper.insertPlanGuest(planNo, memberNo);
+        } else {
+            String leaveType = travelMapper.selectLatestLeaveType(planNo, memberNo);
+            if ("GST_LEV002".equals(leaveType)) {
+                // 내보내기된 경우 초대 코드로 재참여 불가
+                // 호스트 직접 초대(acceptInvitation)를 통해서만 복귀 가능
+                throw new RuntimeException("내보내기된 계획에는 초대 코드로 재참여할 수 없습니다.");
+            }
+            if (leaveType != null) {
+                // GST_LEV001 (자진탈퇴): PLAN_GUEST_LEAVE 삭제 → 재활성화
+                travelMapper.deletePlanGuestLeaveByMember(planNo, memberNo);
+            }
+            // leaveType == null : 이미 활성 참여자 → 별도 처리 없이 통과
         }
         return planNo;
     }
@@ -290,6 +302,9 @@ public class TravelService
 
         if (!alreadyGuest) {
             travelMapper.insertPlanGuest(inv.getPlanNo(), memberNo);
+        } else {
+            // 이전에 탈퇴/내보내기된 경우 PLAN_GUEST_LEAVE 삭제 → PLAN_GUEST 재활성화
+            travelMapper.deletePlanGuestLeaveByMember(inv.getPlanNo(), memberNo);
         }
         return true;
     }

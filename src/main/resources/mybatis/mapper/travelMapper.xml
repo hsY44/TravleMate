@@ -50,7 +50,9 @@
       , TP.OUTLINE                                                               AS overview
       , (TP.TRAVEL_END_DT - TP.TRAVEL_START_DT + 1)                             AS dayCount
       , (SELECT COUNT(*) FROM PLAN_GUEST PG
-          WHERE PG.TRAVEL_PLAN_NO = TP.TRAVEL_PLAN_NO)                           AS guestCount
+          WHERE PG.TRAVEL_PLAN_NO = TP.TRAVEL_PLAN_NO
+            AND NOT EXISTS (SELECT 1 FROM PLAN_GUEST_LEAVE L
+                             WHERE L.PLAN_GUEST_NO = PG.PLAN_GUEST_NO))         AS guestCount
       , TO_CHAR(TP.REVISION_DT, 'YYYY-MM-DD')                                   AS lastEditedAt
       , (SELECT INVITE_CODE
            FROM (SELECT INVITE_CODE
@@ -456,6 +458,32 @@
            AND MEMBER_NO      = #{memberNo}
     </select>
 
+
+    <!--
+        selectLatestLeaveType : 가장 최근 탈퇴 유형 조회 (재참여 허용 여부 판단용)
+        - GST_LEV001 (자진탈퇴)  → 초대 코드로 재참여 허용
+        - GST_LEV002 (내보내기) → 초대 코드로 재참여 불가 (호스트 직접 초대만 가능)
+        - NULL (PLAN_GUEST_LEAVE 없음) → 현재 활성 참여자
+    -->
+    <select id="selectLatestLeaveType" resultType="String">
+        SELECT LEAVE_TYPE
+          FROM (SELECT L.LEAVE_TYPE
+                  FROM PLAN_GUEST_LEAVE L
+                  JOIN PLAN_GUEST PG ON PG.PLAN_GUEST_NO = L.PLAN_GUEST_NO
+                 WHERE PG.TRAVEL_PLAN_NO = #{planNo}
+                   AND PG.MEMBER_NO      = #{memberNo}
+                 ORDER BY L.LEAVE_DATE DESC)
+         WHERE ROWNUM = 1
+    </select>
+
+    <!-- deletePlanGuestLeaveByMember : 재참여 시 탈퇴 이력 삭제 → PLAN_GUEST 재활성화 -->
+    <delete id="deletePlanGuestLeaveByMember">
+        DELETE FROM PLAN_GUEST_LEAVE
+         WHERE PLAN_GUEST_NO = (SELECT PLAN_GUEST_NO
+                                  FROM PLAN_GUEST
+                                 WHERE TRAVEL_PLAN_NO = #{planNo}
+                                   AND MEMBER_NO      = #{memberNo})
+    </delete>
 
     <!-- insertPlanGuestLeave : 게스트 탈퇴 이력 기록 -->
     <insert id="insertPlanGuestLeave">

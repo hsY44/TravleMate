@@ -186,14 +186,18 @@ public class TravelController
 
         Long memberNo = memberNo(session);
 
-        // 이미 참여 중이면 인원 체크 없이 통과 (joinByInviteCode 내부에서 중복 INSERT 방지)
-        // 신규 참여자만 8명 제한 적용
-        if (travelService.planGuestExists(planNo, memberNo) == 0
-                && travelService.countActiveGuests(planNo) >= 8) {
+        // 현재 활성 참여자가 아닌 경우에만 8명 제한 체크
+        // (재참여 포함 — 나갔다가 돌아오는 경우도 슬롯을 차지하므로 확인 필요)
+        Long activePlanGuestNo = itineraryService.getPlanGuestNo(planNo, memberNo);
+        if (activePlanGuestNo == null && travelService.countActiveGuests(planNo) >= 8) {
             return ResponseEntity.status(409).body("최대 8명까지 참여 가능합니다.");
         }
 
-        travelService.joinByInviteCode(inviteCode.trim(), memberNo);
+        try {
+            travelService.joinByInviteCode(inviteCode.trim(), memberNo);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
         return ResponseEntity.ok(Map.of("id", planNo));
     }
 

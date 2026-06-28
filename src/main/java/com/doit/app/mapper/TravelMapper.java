@@ -116,6 +116,19 @@ public interface TravelMapper
     void insertPlanGuestLeave(@Param("planGuestNo") Long planGuestNo,
                               @Param("leaveType") String leaveType);
 
+    /**
+     * 가장 최근 탈퇴 유형 조회 (재참여 허용 여부 판단용)
+     * - GST_LEV001 : 자진탈퇴 → 초대 코드 재참여 허용
+     * - GST_LEV002 : 내보내기 → 초대 코드 재참여 불가
+     * - null       : PLAN_GUEST_LEAVE 없음 (현재 활성 참여자)
+     */
+    String selectLatestLeaveType(@Param("planNo") Long planNo,
+                                 @Param("memberNo") Long memberNo);
+
+    /** 재참여 시 탈퇴 이력 삭제 → PLAN_GUEST 재활성화 */
+    void deletePlanGuestLeaveByMember(@Param("planNo") Long planNo,
+                                      @Param("memberNo") Long memberNo);
+
     /** 특정 게스트 삭제 */
     void deletePlanGuestByMember(@Param("planNo") Long planNo,
                                  @Param("memberNo") Long memberNo);
